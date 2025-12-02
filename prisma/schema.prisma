@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// 사용자 목표 설정 (앱 초기 세팅값)
+model UserConfig {
+  id          Int      @id @default(autoincrement())
+  startWeight Float    // 시작 체중 (101.1kg)
+  goalWeight  Float    // 목표 체중 (85.0kg)
+  startDate   DateTime @default(now()) @db.Timestamptz // 프로젝트 시작일
+}
+
+// 일일 기록 (Log)
+model DailyLog {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @unique @default(now()) @db.Timestamptz // 날짜 (YYYY-MM-DD)
+  weight      Float?   // 당일 체중
+
+  // 퀘스트 달성 여부
+  proteinAmount Int     @default(0)     // 섭취한 단백질 총량(g)
+  waterDone     Boolean @default(false) // 물 3L 달성 여부
+  cleanDiet     Boolean @default(false) // 야식 금지 달성 여부
+
+  // 운동 기록
+  workoutDone   Boolean @default(false) // 운동 완료 여부
+  workoutPart   String? // 그날의 운동 부위 (예: 등/이두)
+  memo          String? @db.Text // 간단 메모
+}
+
+// 인바디 측정 기록 (주간)
+model InBodyRecord {
+  id              Int      @id @default(autoincrement())
+  date            DateTime @default(now()) @db.Timestamptz // 측정 날짜
+  imagePath       String   // 업로드된 이미지 경로
+
+  // 기본 체성분
+  weight          Float    // 체중 (kg)
+  skeletalMuscle  Float    // 골격근량 (kg)
+  bodyFatMass     Float    // 체지방량 (kg)
+  bodyFatPercent  Float    // 체지방률 (%)
+
+  // 비만 지표
+  bmi             Float    // BMI
+  visceralFat     Int      // 내장지방 레벨
+
+  // 인바디 점수 및 기타
+  inbodyScore     Int      // 인바디 점수 (0-100)
+  bmr             Int      // 기초대사량 (kcal)
+
+  // 체수분, 단백질, 무기질
+  bodyWater       Float?   // 체수분 (L)
+  protein         Float?   // 단백질 (kg)
+  minerals        Float?   // 무기질 (kg)
+
+  // 부위별 근육 분석 (JSON 문자열로 저장)
+  segmentalMuscle String?  @db.Text // {"leftArm": "표준", "rightArm": "표준", ...}
+  segmentalFat    String?  @db.Text // {"leftArm": "표준이상", ...}
+
+  // AI 분석 결과
+  aiAnalysis      String?  @db.Text // AI가 생성한 분석 및 조언 (JSON)
+
+  createdAt       DateTime @default(now()) @db.Timestamptz
+}

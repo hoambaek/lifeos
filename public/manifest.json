@@ -1,0 +1,22 @@
+{
+  "name": "6개월 근육질 리셋",
+  "short_name": "근육질 리셋",
+  "description": "인바디 기반 6개월 장기 컷팅 플랜 트래커",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
