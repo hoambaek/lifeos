@@ -512,12 +512,12 @@ export default function Dashboard() {
               ) : (
                 <Button
                   size="lg"
-                  className={`w-full h-14 text-lg font-semibold transition-all duration-300 ${
+                  className={`w-full h-14 text-lg font-semibold ${
                     celebration ? 'celebrate' : ''
                   } ${
                     todayLog?.workoutDone
-                      ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground'
-                      : 'bg-secondary hover:bg-secondary/80'
+                      ? 'workout-btn-completed text-white'
+                      : 'workout-btn text-primary-foreground'
                   }`}
                   disabled={todayLog?.workoutDone}
                   onClick={handleWorkoutComplete}
@@ -528,7 +528,10 @@ export default function Dashboard() {
                       운동 완료!
                     </>
                   ) : (
-                    '운동 완료하기'
+                    <>
+                      <Dumbbell className="w-5 h-5 mr-2" />
+                      운동 완료하기
+                    </>
                   )}
                 </Button>
               )}

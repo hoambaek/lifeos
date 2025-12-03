@@ -446,3 +446,74 @@ html {
   background-size: 200% 200%;
   animation: quest-complete 3s ease infinite;
 }
+
+/* Workout button animations */
+@keyframes workout-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(200, 255, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 8px rgba(200, 255, 0, 0.2);
+  }
+}
+
+@keyframes workout-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes workout-shine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+@keyframes workout-press {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.workout-btn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #c8ff00 0%, #00d4ff 50%, #c8ff00 100%);
+  background-size: 200% 200%;
+  animation: workout-gradient 3s ease infinite, workout-pulse 2s ease-in-out infinite;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.workout-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: workout-shine 2s ease-in-out infinite;
+}
+
+.workout-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 30px rgba(200, 255, 0, 0.5);
+}
+
+.workout-btn:active {
+  animation: workout-press 0.2s ease-out;
+}
+
+.workout-btn-completed {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  animation: none;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+.workout-btn-completed::before {
+  display: none;
+}
