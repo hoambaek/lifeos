@@ -19,6 +19,9 @@ import {
   Target,
   AlertTriangle,
   CheckCircle2,
+  Loader2,
+  Sparkles,
+  ImageIcon,
 } from 'lucide-react'
 import {
   LineChart,
@@ -62,6 +65,9 @@ export default function InBodyPage() {
   const [latestRecord, setLatestRecord] = useState<InBodyRecord | null>(null)
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [selectedFileName, setSelectedFileName] = useState<string>('')
+  const [analyzeError, setAnalyzeError] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // 수동 입력 폼 상태
@@ -101,12 +107,51 @@ export default function InBodyPage() {
     }
   }
 
-  // 파일 선택 핸들러
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 파일 선택 핸들러 - AI 자동 분석
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      // 파일 업로드는 수동 입력과 함께 처리
-      console.log('File selected:', file.name)
+    if (!file) return
+
+    setSelectedFileName(file.name)
+    setAnalyzeError('')
+    setIsAnalyzing(true)
+
+    try {
+      const formDataToSend = new FormData()
+      formDataToSend.append('image', file)
+
+      const res = await fetch('/api/inbody/analyze', {
+        method: 'POST',
+        body: formDataToSend,
+      })
+
+      const result = await res.json()
+
+      if (result.success && result.data) {
+        // AI 분석 결과로 폼 자동 채우기
+        const data = result.data
+        setFormData({
+          ...formData,
+          weight: data.weight?.toString() || '',
+          skeletalMuscle: data.skeletalMuscle?.toString() || '',
+          bodyFatMass: data.bodyFatMass?.toString() || '',
+          bodyFatPercent: data.bodyFatPercent?.toString() || '',
+          bmi: data.bmi?.toString() || '',
+          visceralFat: data.visceralFat?.toString() || '',
+          inbodyScore: data.inbodyScore?.toString() || '',
+          bmr: data.bmr?.toString() || '',
+          bodyWater: data.bodyWater?.toString() || '',
+          protein: data.protein?.toString() || '',
+          minerals: data.minerals?.toString() || '',
+        })
+      } else {
+        setAnalyzeError(result.error || 'AI 분석에 실패했습니다. 수동으로 입력해주세요.')
+      }
+    } catch (error) {
+      console.error('AI 분석 오류:', error)
+      setAnalyzeError('AI 분석 중 오류가 발생했습니다. 수동으로 입력해주세요.')
+    } finally {
+      setIsAnalyzing(false)
     }
   }
 
@@ -163,6 +208,8 @@ export default function InBodyPage() {
           protein: '',
           minerals: '',
         })
+        setSelectedFileName('')
+        setAnalyzeError('')
       }
     } catch (error) {
       console.error('Failed to submit:', error)
@@ -281,27 +328,55 @@ export default function InBodyPage() {
               <DialogTitle>인바디 측정 결과 입력</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-4">
-              {/* 이미지 업로드 */}
-              <div>
-                <label className="text-sm font-medium">측정 결과 이미지</label>
-                <div className="mt-1 flex items-center gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    이미지 선택
-                  </Button>
+              {/* AI 이미지 분석 */}
+              <div className="p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg border border-purple-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-purple-500" />
+                  <span className="text-sm font-medium">AI 자동 분석</span>
                 </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  인바디 결과 사진을 업로드하면 AI가 자동으로 수치를 추출합니다
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant={selectedFileName ? 'secondary' : 'outline'}
+                  className="w-full"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isAnalyzing}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      AI 분석 중...
+                    </>
+                  ) : selectedFileName ? (
+                    <>
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      {selectedFileName}
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-4 h-4 mr-2" />
+                      인바디 사진 선택
+                    </>
+                  )}
+                </Button>
+                {analyzeError && (
+                  <p className="text-xs text-destructive mt-2">{analyzeError}</p>
+                )}
+                {selectedFileName && !isAnalyzing && !analyzeError && (
+                  <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    AI 분석 완료! 아래 수치를 확인하세요
+                  </p>
+                )}
               </div>
 
               {/* 측정일 */}

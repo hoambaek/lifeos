@@ -10,7 +10,14 @@ import { Input } from '@/components/ui/input'
 import { useAppStore, PROTEIN_FOODS, WORKOUT_ROUTINE, PHASES, DailyLog } from '@/stores/useAppStore'
 import { differenceInDays, format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { Droplets, Utensils, Moon, Dumbbell, Trophy, Flame, Target, Activity } from 'lucide-react'
+import { Droplets, Utensils, Moon, Dumbbell, Trophy, Flame, Target, Activity, Zap } from 'lucide-react'
+import { ThemeToggle } from '@/components/ThemeToggle'
+
+interface StreakData {
+  currentStreak: number
+  longestStreak: number
+  todayComplete: boolean
+}
 
 export default function Dashboard() {
   const { config, todayLog, setConfig, setTodayLog, updateTodayLog } = useAppStore()
@@ -23,6 +30,7 @@ export default function Dashboard() {
   const [proteinDialogOpen, setProteinDialogOpen] = useState(false)
   const [celebration, setCelebration] = useState(false)
   const [latestInbody, setLatestInbody] = useState<{ inbodyScore: number } | null>(null)
+  const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0, todayComplete: false })
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -59,9 +67,87 @@ export default function Dashboard() {
       } catch (e) {
         console.log('No inbody data')
       }
+
+      // 스트릭 계산
+      try {
+        const end = new Date()
+        const start = new Date()
+        start.setDate(start.getDate() - 60) // 최근 60일
+        const streakRes = await fetch(
+          `/api/log?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`
+        )
+        const logs = await streakRes.json()
+        if (logs && Array.isArray(logs)) {
+          const streakData = calculateStreak(logs)
+          setStreak(streakData)
+        }
+      } catch (e) {
+        console.log('No streak data')
+      }
     }
     loadData()
   }, [setConfig, setTodayLog])
+
+  // 스트릭 계산 함수
+  const calculateStreak = (logs: Array<{
+    date: string
+    waterDone: boolean
+    proteinAmount: number
+    cleanDiet: boolean
+    workoutDone: boolean
+  }>): StreakData => {
+    // 날짜별로 정렬 (최신순)
+    const sortedLogs = [...logs].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    )
+
+    // 완료된 날짜 체크 (모든 퀘스트 완료)
+    const isComplete = (log: typeof sortedLogs[0]) =>
+      log.waterDone && log.proteinAmount >= 150 && log.cleanDiet && log.workoutDone
+
+    let currentStreak = 0
+    let longestStreak = 0
+    let tempStreak = 0
+    const today = format(new Date(), 'yyyy-MM-dd')
+    let todayComplete = false
+
+    // 오늘 완료 여부 체크
+    const todayLog = sortedLogs.find(log => log.date === today)
+    if (todayLog && isComplete(todayLog)) {
+      todayComplete = true
+    }
+
+    // 연속 스트릭 계산
+    let expectedDate = new Date()
+
+    for (const log of sortedLogs) {
+      const logDate = format(new Date(log.date), 'yyyy-MM-dd')
+      const expectedDateStr = format(expectedDate, 'yyyy-MM-dd')
+
+      if (logDate === expectedDateStr) {
+        if (isComplete(log)) {
+          tempStreak++
+          longestStreak = Math.max(longestStreak, tempStreak)
+        } else {
+          // 오늘이 아니면 스트릭 끊김
+          if (logDate !== today) {
+            if (currentStreak === 0) currentStreak = tempStreak
+            tempStreak = 0
+          }
+        }
+        expectedDate.setDate(expectedDate.getDate() - 1)
+      } else {
+        // 날짜가 건너뛰어졌으면 스트릭 끊김
+        if (currentStreak === 0) currentStreak = tempStreak
+        tempStreak = 0
+        break
+      }
+    }
+
+    if (currentStreak === 0) currentStreak = tempStreak
+
+    return { currentStreak, longestStreak, todayComplete }
+  }
 
   const handleSaveSetup = async () => {
     const res = await fetch('/api/config', {
@@ -172,14 +258,70 @@ export default function Dashboard() {
     <div className="p-4 space-y-4">
       {/* 헤더 - 인사말 & D-Day */}
       <div className="pt-2 pb-4 opacity-0 animate-fade-in-up">
-        <p className="text-muted-foreground text-sm">
-          {format(new Date(), 'M월 d일 EEEE', { locale: ko })}
-        </p>
-        <h1 className="text-2xl font-bold mt-1">
-          <span className="gradient-text">D+{daysPassed}</span>
-          <span className="text-muted-foreground text-lg font-normal ml-2">/ 180일</span>
-        </h1>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-muted-foreground text-sm">
+              {format(new Date(), 'M월 d일 EEEE', { locale: ko })}
+            </p>
+            <h1 className="text-2xl font-bold mt-1">
+              <span className="gradient-text">D+{daysPassed}</span>
+              <span className="text-muted-foreground text-lg font-normal ml-2">/ 180일</span>
+            </h1>
+          </div>
+          <ThemeToggle />
+        </div>
       </div>
+
+      {/* 연속 달성 스트릭 */}
+      {streak.currentStreak > 0 || streak.longestStreak > 0 ? (
+        <Card className={`overflow-hidden border-0 opacity-0 animate-fade-in-up animation-delay-100 ${
+          streak.todayComplete
+            ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30'
+            : 'bg-gradient-to-r from-slate-800/50 to-slate-900/50'
+        }`}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  streak.todayComplete
+                    ? 'bg-gradient-to-br from-orange-500 to-red-500'
+                    : 'bg-slate-700'
+                }`}>
+                  <Flame className={`w-6 h-6 ${streak.todayComplete ? 'text-white' : 'text-slate-400'}`} />
+                </div>
+                <div>
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-3xl font-bold ${
+                      streak.todayComplete ? 'text-orange-500' : 'text-slate-400'
+                    }`}>
+                      {streak.currentStreak}
+                    </span>
+                    <span className="text-sm text-muted-foreground">일 연속</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {streak.todayComplete
+                      ? '오늘도 완료! 내일도 화이팅!'
+                      : '오늘 퀘스트를 완료하면 스트릭이 이어집니다'}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Trophy className="w-3 h-3 text-yellow-500" />
+                  <span>최장 {streak.longestStreak}일</span>
+                </div>
+                {streak.currentStreak >= 7 && (
+                  <div className="flex gap-0.5 mt-1">
+                    {[...Array(Math.min(streak.currentStreak, 7))].map((_, i) => (
+                      <Zap key={i} className="w-3 h-3 text-yellow-500" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* 메인 스코어 카드 */}
       <Card className="overflow-hidden border-0 bg-gradient-to-br from-[#1a1a1e] to-[#141416] opacity-0 animate-fade-in-up animation-delay-100">

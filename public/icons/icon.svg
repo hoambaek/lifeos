@@ -1,0 +1,22 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="128" fill="#0a0a0b"/>
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c8ff00"/>
+      <stop offset="100%" style="stop-color:#00d4ff"/>
+    </linearGradient>
+  </defs>
+  <!-- Dumbbell Icon -->
+  <g transform="translate(256, 256)">
+    <!-- Left weight -->
+    <rect x="-180" y="-60" width="50" height="120" rx="10" fill="url(#gradient)"/>
+    <rect x="-150" y="-40" width="30" height="80" rx="5" fill="url(#gradient)"/>
+    <!-- Bar -->
+    <rect x="-120" y="-15" width="240" height="30" rx="8" fill="url(#gradient)"/>
+    <!-- Right weight -->
+    <rect x="120" y="-40" width="30" height="80" rx="5" fill="url(#gradient)"/>
+    <rect x="130" y="-60" width="50" height="120" rx="10" fill="url(#gradient)"/>
+  </g>
+  <!-- 6M text -->
+  <text x="256" y="420" text-anchor="middle" font-family="system-ui, sans-serif" font-size="80" font-weight="bold" fill="#c8ff00">6M</text>
+</svg>
