@@ -174,10 +174,13 @@ export default function Dashboard() {
     handleUpdateLog({ proteinAmount: newAmount })
   }
 
-  const handleWorkoutComplete = () => {
-    handleUpdateLog({ workoutDone: true, workoutPart: todayWorkout })
-    setCelebration(true)
-    setTimeout(() => setCelebration(false), 1000)
+  const handleWorkoutToggle = () => {
+    const newState = !todayLog?.workoutDone
+    handleUpdateLog({ workoutDone: newState, workoutPart: newState ? todayWorkout : undefined })
+    if (newState) {
+      setCelebration(true)
+      setTimeout(() => setCelebration(false), 1000)
+    }
   }
 
   // 계산값들
@@ -519,8 +522,7 @@ export default function Dashboard() {
                       ? 'workout-btn-completed text-white'
                       : 'workout-btn text-primary-foreground'
                   }`}
-                  disabled={todayLog?.workoutDone}
-                  onClick={handleWorkoutComplete}
+                  onClick={handleWorkoutToggle}
                 >
                   {todayLog?.workoutDone ? (
                     <>
