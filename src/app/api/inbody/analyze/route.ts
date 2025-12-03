@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 
 // Gemini API 초기화
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' })
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,9 +17,6 @@ export async function POST(request: NextRequest) {
     const bytes = await image.arrayBuffer()
     const base64 = Buffer.from(bytes).toString('base64')
     const mimeType = image.type || 'image/jpeg'
-
-    // Gemini Vision 모델 사용
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
     const prompt = `이 이미지는 인바디(InBody) 체성분 분석 결과지입니다.
 이미지에서 다음 수치들을 정확하게 추출해주세요.
@@ -57,18 +54,21 @@ export async function POST(request: NextRequest) {
   "minerals": 4.83
 }`
 
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          data: base64,
-          mimeType,
+    // Gemini 2.5 Flash 모델로 이미지 분석
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          inlineData: {
+            mimeType,
+            data: base64,
+          },
         },
-      },
-      prompt,
-    ])
+        { text: prompt },
+      ],
+    })
 
-    const response = await result.response
-    const text = response.text()
+    const text = response.text || ''
 
     // JSON 파싱 시도
     try {
