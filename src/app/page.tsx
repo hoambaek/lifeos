@@ -405,7 +405,7 @@ export default function Dashboard() {
                 <Toggle
                   pressed={todayLog?.waterDone}
                   onPressedChange={(pressed) => handleUpdateLog({ waterDone: pressed })}
-                  className={`w-14 h-8 rounded-full ${todayLog?.waterDone ? 'bg-[#00d4ff] data-[state=on]:bg-[#00d4ff]' : 'bg-secondary'}`}
+                  className={`w-14 h-8 rounded-full toggle-animated relative overflow-hidden ${todayLog?.waterDone ? 'bg-[#00d4ff] data-[state=on]:bg-[#00d4ff]' : 'bg-secondary'}`}
                 >
                   <span className="sr-only">물 완료</span>
                 </Toggle>
@@ -482,7 +482,7 @@ export default function Dashboard() {
                 <Toggle
                   pressed={todayLog?.cleanDiet}
                   onPressedChange={(pressed) => handleUpdateLog({ cleanDiet: pressed })}
-                  className={`w-14 h-8 rounded-full ${todayLog?.cleanDiet ? 'bg-[#a855f7] data-[state=on]:bg-[#a855f7]' : 'bg-secondary'}`}
+                  className={`w-14 h-8 rounded-full toggle-animated relative overflow-hidden ${todayLog?.cleanDiet ? 'bg-[#a855f7] data-[state=on]:bg-[#a855f7]' : 'bg-secondary'}`}
                 >
                   <span className="sr-only">클린식 완료</span>
                 </Toggle>
