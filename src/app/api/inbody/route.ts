@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { writeFile } from 'fs/promises'
+import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 
 // GET: 인바디 기록 조회
@@ -59,7 +59,11 @@ export async function POST(request: Request) {
       // 파일명 생성 (timestamp + 원본 파일명)
       const timestamp = Date.now()
       const fileName = `${timestamp}_${file.name}`
-      const uploadPath = path.join(process.cwd(), 'public', 'uploads', 'inbody', fileName)
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'inbody')
+      const uploadPath = path.join(uploadDir, fileName)
+
+      // 업로드 디렉토리가 없으면 생성
+      await mkdir(uploadDir, { recursive: true })
 
       await writeFile(uploadPath, buffer)
       imagePath = `/uploads/inbody/${fileName}`

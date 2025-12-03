@@ -68,6 +68,8 @@ export default function InBodyPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [selectedFileName, setSelectedFileName] = useState<string>('')
   const [analyzeError, setAnalyzeError] = useState<string>('')
+  const [saveError, setSaveError] = useState<string>('')
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // 수동 입력 폼 상태
@@ -157,7 +159,16 @@ export default function InBodyPage() {
 
   // 폼 제출
   const handleSubmit = async () => {
+    // 필수 필드 검증
+    if (!formData.weight || !formData.skeletalMuscle || !formData.bodyFatPercent) {
+      setSaveError('체중, 골격근량, 체지방률은 필수 입력 항목입니다.')
+      return
+    }
+
     setIsLoading(true)
+    setSaveError('')
+    setSaveSuccess(false)
+
     try {
       const formDataToSend = new FormData()
 
@@ -172,12 +183,12 @@ export default function InBodyPage() {
         date: formData.date,
         weight: parseFloat(formData.weight),
         skeletalMuscle: parseFloat(formData.skeletalMuscle),
-        bodyFatMass: parseFloat(formData.bodyFatMass),
+        bodyFatMass: parseFloat(formData.bodyFatMass) || 0,
         bodyFatPercent: parseFloat(formData.bodyFatPercent),
-        bmi: parseFloat(formData.bmi),
-        visceralFat: parseInt(formData.visceralFat),
-        inbodyScore: parseInt(formData.inbodyScore),
-        bmr: parseInt(formData.bmr),
+        bmi: parseFloat(formData.bmi) || 0,
+        visceralFat: parseInt(formData.visceralFat) || 0,
+        inbodyScore: parseInt(formData.inbodyScore) || 0,
+        bmr: parseInt(formData.bmr) || 0,
         bodyWater: formData.bodyWater ? parseFloat(formData.bodyWater) : null,
         protein: formData.protein ? parseFloat(formData.protein) : null,
         minerals: formData.minerals ? parseFloat(formData.minerals) : null,
@@ -191,28 +202,37 @@ export default function InBodyPage() {
       })
 
       if (res.ok) {
-        setIsUploadOpen(false)
+        setSaveSuccess(true)
         loadRecords()
-        // 폼 초기화
-        setFormData({
-          date: format(new Date(), 'yyyy-MM-dd'),
-          weight: '',
-          skeletalMuscle: '',
-          bodyFatMass: '',
-          bodyFatPercent: '',
-          bmi: '',
-          visceralFat: '',
-          inbodyScore: '',
-          bmr: '',
-          bodyWater: '',
-          protein: '',
-          minerals: '',
-        })
-        setSelectedFileName('')
-        setAnalyzeError('')
+        // 2초 후 다이얼로그 닫기
+        setTimeout(() => {
+          setIsUploadOpen(false)
+          setSaveSuccess(false)
+          // 폼 초기화
+          setFormData({
+            date: format(new Date(), 'yyyy-MM-dd'),
+            weight: '',
+            skeletalMuscle: '',
+            bodyFatMass: '',
+            bodyFatPercent: '',
+            bmi: '',
+            visceralFat: '',
+            inbodyScore: '',
+            bmr: '',
+            bodyWater: '',
+            protein: '',
+            minerals: '',
+          })
+          setSelectedFileName('')
+          setAnalyzeError('')
+        }, 1500)
+      } else {
+        const errorData = await res.json()
+        setSaveError(errorData.error || '저장에 실패했습니다. 다시 시도해주세요.')
       }
     } catch (error) {
       console.error('Failed to submit:', error)
+      setSaveError('네트워크 오류가 발생했습니다. 다시 시도해주세요.')
     } finally {
       setIsLoading(false)
     }
@@ -316,14 +336,20 @@ export default function InBodyPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">인바디 분석</h1>
-        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+        <Dialog open={isUploadOpen} onOpenChange={(open) => {
+            setIsUploadOpen(open)
+            if (!open) {
+              setSaveError('')
+              setSaveSuccess(false)
+            }
+          }}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Upload className="w-4 h-4 mr-1" />
               측정 기록
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden">
             <DialogHeader>
               <DialogTitle>인바디 측정 결과 입력</DialogTitle>
             </DialogHeader>
@@ -470,8 +496,43 @@ export default function InBodyPage() {
                 </div>
               </div>
 
-              <Button onClick={handleSubmit} className="w-full" disabled={isLoading}>
-                {isLoading ? '저장 중...' : '저장하기'}
+              {/* 저장 에러 메시지 */}
+              {saveError && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <p className="text-sm text-destructive flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    {saveError}
+                  </p>
+                </div>
+              )}
+
+              {/* 저장 성공 메시지 */}
+              {saveSuccess && (
+                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
+                  <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-green-600">저장 완료!</p>
+                  <p className="text-xs text-muted-foreground mt-1">인바디 기록이 저장되었습니다</p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleSubmit}
+                className="w-full"
+                disabled={isLoading || saveSuccess}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    저장 중...
+                  </>
+                ) : saveSuccess ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    저장 완료
+                  </>
+                ) : (
+                  '저장하기'
+                )}
               </Button>
             </div>
           </DialogContent>
