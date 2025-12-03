@@ -162,11 +162,6 @@ export default function LogPage() {
               partial: (date) => getDayStatus(date) === 'partial',
               fail: (date) => getDayStatus(date) === 'fail',
             }}
-            modifiersStyles={{
-              success: { backgroundColor: '#22c55e', color: 'white' },
-              partial: { backgroundColor: '#eab308', color: 'white' },
-              fail: { backgroundColor: '#ef4444', color: 'white' },
-            }}
           />
           <div className="flex justify-center gap-4 mt-4 text-sm">
             <div className="flex items-center gap-1">

@@ -179,7 +179,6 @@ function CalendarDayButton({
   className,
   day,
   modifiers,
-  style,
   ...props
 }: React.ComponentProps<typeof DayButton>) {
   const defaultClassNames = getDefaultClassNames()
@@ -189,11 +188,24 @@ function CalendarDayButton({
     if (modifiers.focused) ref.current?.focus()
   }, [modifiers.focused])
 
-  // modifiersStyles에서 전달된 스타일을 버튼에 적용
-  const buttonStyle = style ? {
-    backgroundColor: style.backgroundColor,
-    color: style.color,
-  } : undefined
+  // 커스텀 modifier에 따른 스타일 결정
+  const getModifierStyle = () => {
+    // @ts-expect-error - custom modifiers
+    if (modifiers.success) {
+      return { backgroundColor: '#22c55e', color: 'white' }
+    }
+    // @ts-expect-error - custom modifiers
+    if (modifiers.partial) {
+      return { backgroundColor: '#eab308', color: 'white' }
+    }
+    // @ts-expect-error - custom modifiers
+    if (modifiers.fail) {
+      return { backgroundColor: '#ef4444', color: 'white' }
+    }
+    return undefined
+  }
+
+  const modifierStyle = getModifierStyle()
 
   return (
     <Button
@@ -210,7 +222,7 @@ function CalendarDayButton({
       data-range-start={modifiers.range_start}
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
-      style={buttonStyle}
+      style={modifierStyle}
       className={cn(
         "data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 dark:hover:text-accent-foreground flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md [&>span]:text-xs [&>span]:opacity-70 rounded-full",
         defaultClassNames.day,
