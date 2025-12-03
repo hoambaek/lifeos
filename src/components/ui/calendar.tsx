@@ -190,15 +190,12 @@ function CalendarDayButton({
 
   // 커스텀 modifier에 따른 스타일 결정
   const getModifierStyle = () => {
-    // @ts-expect-error - custom modifiers
     if (modifiers.success) {
       return { backgroundColor: '#22c55e', color: 'white' }
     }
-    // @ts-expect-error - custom modifiers
     if (modifiers.partial) {
       return { backgroundColor: '#eab308', color: 'white' }
     }
-    // @ts-expect-error - custom modifiers
     if (modifiers.fail) {
       return { backgroundColor: '#ef4444', color: 'white' }
     }
