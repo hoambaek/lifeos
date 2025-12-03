@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
 
 // GET: 인바디 기록 조회
 export async function GET(request: Request) {
@@ -41,7 +39,6 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const formData = await request.formData()
-    const file = formData.get('image') as File | null
     const dataString = formData.get('data') as string | null
 
     if (!dataString) {
@@ -49,31 +46,12 @@ export async function POST(request: Request) {
     }
 
     const data = JSON.parse(dataString)
-    let imagePath = data.imagePath || ''
 
-    // 파일 업로드 처리
-    if (file) {
-      const bytes = await file.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-
-      // 파일명 생성 (timestamp + 원본 파일명)
-      const timestamp = Date.now()
-      const fileName = `${timestamp}_${file.name}`
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'inbody')
-      const uploadPath = path.join(uploadDir, fileName)
-
-      // 업로드 디렉토리가 없으면 생성
-      await mkdir(uploadDir, { recursive: true })
-
-      await writeFile(uploadPath, buffer)
-      imagePath = `/uploads/inbody/${fileName}`
-    }
-
-    // DB에 기록 저장
+    // DB에 기록 저장 (이미지는 Vercel에서 파일시스템 제한으로 저장하지 않음)
     const record = await prisma.inBodyRecord.create({
       data: {
         date: data.date ? new Date(data.date) : new Date(),
-        imagePath,
+        imagePath: '',
         weight: data.weight,
         skeletalMuscle: data.skeletalMuscle,
         bodyFatMass: data.bodyFatMass,
