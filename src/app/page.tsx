@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { useAppStore, PROTEIN_FOODS, WORKOUT_ROUTINE, PHASES, DailyLog } from '@/stores/useAppStore'
 import { differenceInDays, format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { Droplets, Utensils, Moon, Dumbbell, Trophy, Flame, Target, Activity, Zap } from 'lucide-react'
+import { Droplets, Utensils, Moon, Dumbbell, Trophy, Flame, Target, Activity, Zap, RotateCcw } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 interface StreakData {
@@ -28,6 +28,7 @@ export default function Dashboard() {
     startDate: format(new Date(), 'yyyy-MM-dd'),
   })
   const [proteinDialogOpen, setProteinDialogOpen] = useState(false)
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [celebration, setCelebration] = useState(false)
   const [latestInbody, setLatestInbody] = useState<{ inbodyScore: number } | null>(null)
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0, todayComplete: false })
@@ -181,6 +182,23 @@ export default function Dashboard() {
       setCelebration(true)
       setTimeout(() => setCelebration(false), 1000)
     }
+  }
+
+  const handleReset = async () => {
+    const resetData = {
+      proteinAmount: 0,
+      waterDone: false,
+      cleanDiet: false,
+      workoutDone: false,
+      workoutPart: undefined,
+    }
+    updateTodayLog(resetData)
+    await fetch('/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...todayLog, ...resetData }),
+    })
+    setResetDialogOpen(false)
   }
 
   // 계산값들
@@ -387,10 +405,50 @@ export default function Dashboard() {
 
       {/* 오늘의 퀘스트 */}
       <div className="opacity-0 animate-fade-in-up animation-delay-200">
-        <h2 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-          <Target className="w-4 h-4" />
-          오늘의 퀘스트
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            오늘의 퀘스트
+          </h2>
+          <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                새로 시작
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-xs glass-card border-0">
+              <DialogHeader>
+                <DialogTitle className="text-lg">오늘 기록 초기화</DialogTitle>
+              </DialogHeader>
+              <div className="pt-4 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  오늘의 모든 기록이 초기화됩니다. 계속하시겠습니까?
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setResetDialogOpen(false)}
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="flex-1"
+                    onClick={handleReset}
+                  >
+                    초기화
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
         <div className="space-y-2">
           {/* 물 3L */}
           <Card className="border-0 bg-card/50 touch-scale">
