@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { useAppStore, PROTEIN_FOODS, WORKOUT_ROUTINE, PHASES, DailyLog } from '@/stores/useAppStore'
 import { differenceInDays, format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { Droplets, Utensils, Moon, Dumbbell, Trophy, Flame, Target, Activity, Zap, RotateCcw } from 'lucide-react'
+import { Droplets, Utensils, Moon, Dumbbell, Trophy, Flame, Target, Activity, Zap, RotateCcw, Settings } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 interface StreakData {
@@ -201,6 +201,17 @@ export default function Dashboard() {
     setResetDialogOpen(false)
   }
 
+  const openSettings = () => {
+    if (config) {
+      setSetupData({
+        startWeight: config.startWeight,
+        goalWeight: config.goalWeight,
+        startDate: format(new Date(config.startDate), 'yyyy-MM-dd'),
+      })
+    }
+    setIsSetupOpen(true)
+  }
+
   // 계산값들
   const daysPassed = config?.startDate
     ? differenceInDays(new Date(), new Date(config.startDate)) + 1
@@ -289,9 +300,62 @@ export default function Dashboard() {
               <span className="text-muted-foreground text-lg font-normal ml-2">/ 180일</span>
             </h1>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-9 h-9 text-muted-foreground hover:text-foreground"
+              onClick={openSettings}
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
+
+      {/* 설정 다이얼로그 */}
+      <Dialog open={isSetupOpen} onOpenChange={setIsSetupOpen}>
+        <DialogContent className="max-w-sm mx-auto glass-card border-0">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold gradient-text">설정</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">시작 체중 (kg)</label>
+              <Input
+                type="number"
+                step="0.1"
+                value={setupData.startWeight}
+                onChange={(e) => setSetupData({ ...setupData, startWeight: parseFloat(e.target.value) })}
+                className="mt-1 bg-secondary/50 border-0 h-12 text-lg"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">목표 체중 (kg)</label>
+              <Input
+                type="number"
+                step="0.1"
+                value={setupData.goalWeight}
+                onChange={(e) => setSetupData({ ...setupData, goalWeight: parseFloat(e.target.value) })}
+                className="mt-1 bg-secondary/50 border-0 h-12 text-lg"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">시작일</label>
+              <Input
+                type="date"
+                value={setupData.startDate}
+                onChange={(e) => setSetupData({ ...setupData, startDate: e.target.value })}
+                className="mt-1 bg-secondary/50 border-0 h-12"
+              />
+            </div>
+            <Button onClick={handleSaveSetup} className="w-full h-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
+              저장하기
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 연속 달성 스트릭 */}
       {streak.currentStreak > 0 || streak.longestStreak > 0 ? (
