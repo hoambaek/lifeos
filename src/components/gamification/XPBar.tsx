@@ -55,7 +55,7 @@ export function XPBar({ compact = false }: XPBarProps) {
           className="absolute inset-y-0 left-0 xp-bar-fill rounded-full"
           style={{ width: `${progress}%` }}
         />
-        <div className="absolute inset-0 xp-bar-shimmer" />
+        {progress > 0 && <div className="absolute inset-0 xp-bar-shimmer" />}
       </div>
 
       <div className="flex justify-between mt-1.5 text-xs text-zinc-500">

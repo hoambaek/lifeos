@@ -14,8 +14,8 @@ async function updateChallengeProgress(
   const activeChallenges = await prisma.challenge.findMany({
     where: {
       isActive: true,
+      startDate: { lte: now },
       endDate: { gte: now },
-      OR: [{ category }, { category: 'mixed' }],
     },
     include: {
       userChallenges: {
@@ -29,28 +29,34 @@ async function updateChallengeProgress(
     if (!userChallenge) continue
 
     let shouldIncrement = false
+    const key = challenge.key.toLowerCase()
 
     // 카테고리별 증가 조건
     if (category === 'workout') {
       // 부위별 챌린지 체크
-      if (challenge.key.includes('leg') && workoutPart === '하체') {
+      if (key.includes('leg') && workoutPart === '하체') {
         shouldIncrement = true
-      } else if (challenge.key.includes('back') && workoutPart === '등') {
+      } else if (key.includes('back') && workoutPart === '등') {
         shouldIncrement = true
-      } else if (challenge.key.includes('chest') && workoutPart === '가슴') {
+      } else if (key.includes('chest') && workoutPart === '가슴') {
         shouldIncrement = true
       } else if (
-        challenge.key.includes('workout') &&
-        !challenge.key.includes('leg') &&
-        !challenge.key.includes('back') &&
-        !challenge.key.includes('chest')
+        key.includes('workout') &&
+        !key.includes('leg') &&
+        !key.includes('back') &&
+        !key.includes('chest')
       ) {
-        // 일반 운동 챌린지
+        // 일반 운동 챌린지 (weekly_workout_5, weekly_workout_7 등)
         shouldIncrement = true
       }
     } else if (category === 'quest') {
       // 퀘스트 관련 챌린지
-      if (challenge.key.includes('water') || challenge.key.includes('protein') || challenge.key.includes('clean')) {
+      if (key.includes('water') || key.includes('protein') || key.includes('clean')) {
+        shouldIncrement = true
+      }
+    } else if (category === 'mixed') {
+      // mixed 챌린지 (완벽한 3일 등)
+      if (key.includes('perfect') || challenge.category === 'mixed') {
         shouldIncrement = true
       }
     }
