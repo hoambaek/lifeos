@@ -1,0 +1,11 @@
+// 게이미피케이션 컴포넌트 내보내기
+export { XPBar } from './XPBar'
+export { XPGainAnimation } from './XPGainAnimation'
+export { LevelUpModal } from './LevelUpModal'
+export { ConfettiEffect } from './ConfettiEffect'
+export { BadgeCard } from './BadgeCard'
+export { BadgeUnlockModal } from './BadgeUnlockModal'
+export { StreakCard } from './StreakCard'
+export { StreakFreezeDialog } from './StreakFreezeDialog'
+export { ChallengeCard } from './ChallengeCard'
+export { ChallengeList } from './ChallengeList'

@@ -517,3 +517,283 @@ html {
 .workout-btn-completed::before {
   display: none;
 }
+
+/* ============================================
+   GAMIFICATION ANIMATIONS
+   ============================================ */
+
+/* XP Gain Floating Animation */
+@keyframes xp-float-up {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-30px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.8);
+  }
+}
+
+.xp-gain {
+  position: fixed;
+  pointer-events: none;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #c8ff00;
+  text-shadow: 0 0 10px rgba(200, 255, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.5);
+  animation: xp-float-up 1.5s ease-out forwards;
+  z-index: 9999;
+}
+
+/* Level Badge */
+.level-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
+  background: linear-gradient(135deg, rgba(200, 255, 0, 0.2), rgba(0, 212, 255, 0.2));
+  border: 1px solid rgba(200, 255, 0, 0.3);
+  border-radius: 0.5rem;
+  color: #c8ff00;
+}
+
+.level-badge-large {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, rgba(200, 255, 0, 0.15), rgba(0, 212, 255, 0.15));
+  border: 1px solid rgba(200, 255, 0, 0.3);
+  border-radius: 0.75rem;
+  color: #c8ff00;
+}
+
+/* XP Bar */
+.xp-bar-fill {
+  background: linear-gradient(90deg, #c8ff00, #00d4ff);
+  transition: width 0.5s ease-out;
+}
+
+.xp-bar-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Level Up Celebration */
+@keyframes level-up-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+@keyframes level-up-glow {
+  0%, 100% { box-shadow: 0 0 30px rgba(200, 255, 0, 0.3); }
+  50% { box-shadow: 0 0 80px rgba(200, 255, 0, 0.6), 0 0 120px rgba(0, 212, 255, 0.3); }
+}
+
+@keyframes level-number-count {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.3); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.level-up-container {
+  animation: level-up-glow 2s ease-in-out infinite;
+}
+
+.level-number {
+  animation: level-number-count 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Badge Unlock Animation */
+@keyframes badge-fly-in {
+  0% {
+    transform: translateY(-100vh) rotate(-180deg) scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(20px) rotate(10deg) scale(1.2);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-10px) rotate(-5deg) scale(1.1);
+  }
+  100% {
+    transform: translateY(0) rotate(0) scale(1);
+  }
+}
+
+.badge-unlock {
+  animation: badge-fly-in 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Sparkle Effect */
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+.sparkle {
+  animation: sparkle 0.8s ease-in-out infinite;
+}
+
+/* Confetti Particles */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti-particle {
+  position: fixed;
+  top: -20px;
+  width: 10px;
+  height: 10px;
+  animation: confetti-fall 3s ease-out forwards;
+}
+
+/* Streak Fire Effect */
+@keyframes fire-flicker {
+  0%, 100% {
+    transform: scaleY(1) scaleX(1);
+    filter: brightness(1);
+  }
+  25% {
+    transform: scaleY(1.1) scaleX(0.95);
+    filter: brightness(1.2);
+  }
+  50% {
+    transform: scaleY(0.95) scaleX(1.05);
+    filter: brightness(0.9);
+  }
+  75% {
+    transform: scaleY(1.05) scaleX(0.98);
+    filter: brightness(1.1);
+  }
+}
+
+.fire-effect {
+  animation: fire-flicker 0.5s ease-in-out infinite;
+}
+
+/* Fire Background Effects */
+.fire-background {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fire-background::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(ellipse at bottom, rgba(255, 100, 0, 0.3) 0%, transparent 70%);
+  animation: fire-flicker 1s ease-in-out infinite;
+}
+
+.fire-low::before {
+  opacity: 0.3;
+}
+
+.fire-medium::before {
+  opacity: 0.5;
+}
+
+.fire-strong::before {
+  opacity: 0.7;
+  background: radial-gradient(ellipse at bottom, rgba(255, 150, 0, 0.4) 0%, rgba(255, 50, 0, 0.2) 40%, transparent 70%);
+}
+
+.fire-intense::before {
+  opacity: 1;
+  background: radial-gradient(ellipse at bottom, rgba(255, 200, 0, 0.5) 0%, rgba(255, 100, 0, 0.3) 30%, rgba(255, 0, 0, 0.2) 60%, transparent 80%);
+}
+
+/* Streak Milestone Screen Shake */
+@keyframes screen-shake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-5px); }
+  20% { transform: translateX(5px); }
+  30% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  50% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  70% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+  90% { transform: translateX(-1px); }
+}
+
+.screen-shake {
+  animation: screen-shake 0.6s ease-out;
+}
+
+/* Challenge Complete Burst */
+@keyframes challenge-burst {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+.challenge-burst {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(200, 255, 0, 0.4) 0%, transparent 70%);
+  animation: challenge-burst 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Badge Card Hover Effects */
+.badge-card {
+  transition: all 0.3s ease;
+}
+
+.badge-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Streak Card Styles */
+.streak-card {
+  transition: all 0.3s ease;
+}
+
+/* Challenge Card */
+.challenge-card {
+  transition: all 0.3s ease;
+}
+
+.challenge-card:hover {
+  transform: translateY(-2px);
+}
+
+/* XP Counter Tick */
+@keyframes xp-counter-tick {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+
+.xp-counter-active {
+  animation: xp-counter-tick 0.1s ease-out;
+}

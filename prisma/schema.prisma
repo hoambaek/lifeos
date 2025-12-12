@@ -33,8 +33,109 @@ model DailyLog {
   // 운동 기록
   workoutDone   Boolean @default(false) // 운동 완료 여부
   workoutPart   String? // 그날의 운동 부위 (예: 등/이두)
+  workoutTime   DateTime? @db.Timestamptz // 운동 완료 시간 (얼리버드/나이트오울 체크용)
   memo          String? @db.Text // 간단 메모
+
+  // 게이미피케이션
+  xpEarned      Int     @default(0) // 이 날 획득한 XP
+  streakFrozen  Boolean @default(false) // 프리즈 사용 여부
 }
+
+// ============================================
+// 게이미피케이션 시스템
+// ============================================
+
+// 사용자 게이미피케이션 프로필
+model UserGamification {
+  id              Int       @id @default(autoincrement())
+  totalXP         Int       @default(0)        // 총 누적 XP
+  currentLevel    Int       @default(1)        // 현재 레벨 (1-100)
+  streakFreezes   Int       @default(0)        // 보유 스트릭 프리즈 토큰
+  streakFreezesUsed Int     @default(0)        // 사용한 프리즈 총 횟수
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @db.Timestamptz
+}
+
+// 업적/뱃지 정의
+model Achievement {
+  id              Int       @id @default(autoincrement())
+  key             String    @unique           // e.g., "first_workout", "streak_7"
+  nameKo          String                      // 한국어 이름
+  descriptionKo   String                      // 한국어 설명
+  iconEmoji       String                      // 이모지 아이콘
+  category        String                      // "workout", "streak", "quest", "special"
+  tier            String    @default("bronze") // bronze, silver, gold, platinum
+  xpReward        Int       @default(0)       // 달성 시 XP 보상
+  requirement     Int       @default(1)       // 달성 조건 수치
+  freezeReward    Int       @default(0)       // 달성 시 프리즈 토큰 보상
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+
+  userAchievements UserAchievement[]
+}
+
+// 사용자가 달성한 업적
+model UserAchievement {
+  id              Int       @id @default(autoincrement())
+  achievementId   Int
+  achievement     Achievement @relation(fields: [achievementId], references: [id])
+  unlockedAt      DateTime  @default(now()) @db.Timestamptz
+  notified        Boolean   @default(false)   // 언락 애니메이션 표시 여부
+
+  @@unique([achievementId])
+}
+
+// 주간/월간 챌린지 정의
+model Challenge {
+  id              Int       @id @default(autoincrement())
+  key             String    @unique
+  nameKo          String
+  descriptionKo   String
+  type            String                      // "weekly", "monthly"
+  category        String                      // "workout", "quest", "streak", "mixed"
+  targetValue     Int                         // 목표 수치
+  xpReward        Int
+  startDate       DateTime  @db.Timestamptz
+  endDate         DateTime  @db.Timestamptz
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+
+  userChallenges  UserChallenge[]
+}
+
+// 사용자의 챌린지 진행 상황
+model UserChallenge {
+  id              Int       @id @default(autoincrement())
+  challengeId     Int
+  challenge       Challenge @relation(fields: [challengeId], references: [id])
+  currentValue    Int       @default(0)       // 현재 진행도
+  completed       Boolean   @default(false)
+  completedAt     DateTime? @db.Timestamptz
+  claimed         Boolean   @default(false)   // XP 수령 여부
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+
+  @@unique([challengeId])
+}
+
+// XP 트랜잭션 로그
+model XPTransaction {
+  id              Int       @id @default(autoincrement())
+  amount          Int                         // 획득 XP
+  source          String                      // "workout", "streak", "quest", "challenge", "achievement"
+  sourceId        String?                     // 관련 엔티티 ID
+  description     String?                     // 설명
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+}
+
+// 스트릭 프리즈 사용 로그
+model StreakFreezeLog {
+  id              Int       @id @default(autoincrement())
+  usedAt          DateTime  @default(now()) @db.Timestamptz
+  savedStreak     Int                         // 프리즈로 지킨 스트릭 수
+}
+
+// ============================================
+// 기존 모델
+// ============================================
 
 // 인바디 측정 기록 (주간)
 model InBodyRecord {

@@ -8,10 +8,19 @@ import { Toggle } from '@/components/ui/toggle'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useAppStore, PROTEIN_FOODS, WORKOUT_ROUTINE, PHASES, DailyLog } from '@/stores/useAppStore'
+import { useGamificationStore } from '@/stores/useGamificationStore'
 import { differenceInDays, format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { Droplets, Utensils, Moon, Dumbbell, Trophy, Flame, Target, Activity, Zap, RotateCcw, Settings } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import {
+  XPBar,
+  XPGainAnimation,
+  LevelUpModal,
+  BadgeUnlockModal,
+  StreakCard,
+  ChallengeList,
+} from '@/components/gamification'
 
 interface StreakData {
   currentStreak: number
@@ -21,6 +30,16 @@ interface StreakData {
 
 export default function Dashboard() {
   const { config, todayLog, setConfig, setTodayLog, updateTodayLog } = useAppStore()
+  const {
+    userGamification,
+    setUserGamification,
+    setAchievements,
+    setUserAchievements,
+    setActiveChallenges,
+    setUserChallenges,
+    addXP,
+    addAnimation,
+  } = useGamificationStore()
   const [isSetupOpen, setIsSetupOpen] = useState(false)
   const [setupData, setSetupData] = useState({
     startWeight: 101.1,
@@ -85,9 +104,34 @@ export default function Dashboard() {
       } catch (e) {
         console.log('No streak data')
       }
+
+      // 게이미피케이션 데이터 로드
+      try {
+        const gamificationRes = await fetch('/api/gamification')
+        const gamificationData = await gamificationRes.json()
+        if (gamificationData) {
+          if (gamificationData.userGamification) {
+            setUserGamification(gamificationData.userGamification)
+          }
+          if (gamificationData.achievements) {
+            setAchievements(gamificationData.achievements)
+          }
+          if (gamificationData.userAchievements) {
+            setUserAchievements(gamificationData.userAchievements)
+          }
+          if (gamificationData.activeChallenges) {
+            setActiveChallenges(gamificationData.activeChallenges)
+          }
+          if (gamificationData.userChallenges) {
+            setUserChallenges(gamificationData.userChallenges)
+          }
+        }
+      } catch (e) {
+        console.log('No gamification data')
+      }
     }
     loadData()
-  }, [setConfig, setTodayLog])
+  }, [setConfig, setTodayLog, setUserGamification, setAchievements, setUserAchievements, setActiveChallenges, setUserChallenges])
 
   // 스트릭 계산 함수
   const calculateStreak = (logs: Array<{
@@ -175,12 +219,52 @@ export default function Dashboard() {
     handleUpdateLog({ proteinAmount: newAmount })
   }
 
-  const handleWorkoutToggle = () => {
+const handleWorkoutToggle = async () => {
     const newState = !todayLog?.workoutDone
-    handleUpdateLog({ workoutDone: newState, workoutPart: newState ? todayWorkout : undefined })
     if (newState) {
+      // 운동 완료 시 XP 획득
+      handleUpdateLog({ workoutDone: true, workoutPart: todayWorkout })
       setCelebration(true)
       setTimeout(() => setCelebration(false), 1000)
+
+      const oldLevel = userGamification?.currentLevel || 1
+      try {
+        const xpRes = await fetch('/api/gamification/xp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: 100,
+            source: 'workout',
+            description: `${todayWorkout} 운동 완료`,
+          }),
+        })
+        const xpData = await xpRes.json()
+
+        addXP(100, 'workout')
+
+        if (xpData.newLevel && xpData.newLevel > oldLevel) {
+          addAnimation({
+            type: 'level_up',
+            data: { newLevel: xpData.newLevel },
+          })
+        }
+
+        const achievementRes = await fetch('/api/gamification/achievements/check', {
+          method: 'POST',
+        })
+        const achievementData = await achievementRes.json()
+        if (achievementData.newlyUnlocked && achievementData.newlyUnlocked.length > 0) {
+          const firstUnlocked = achievementData.newlyUnlocked[0]
+          addAnimation({
+            type: 'badge_unlock',
+            data: { achievement: firstUnlocked },
+          })
+        }
+      } catch (e) {
+        console.error('Failed to update gamification:', e)
+      }
+    } else {
+      handleUpdateLog({ workoutDone: false, workoutPart: undefined })
     }
   }
 
@@ -288,6 +372,15 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 space-y-4">
+      {/* XP 획득 애니메이션 */}
+      <XPGainAnimation />
+
+      {/* 레벨업 모달 */}
+      <LevelUpModal />
+
+      {/* 뱃지 언락 모달 */}
+      <BadgeUnlockModal />
+
       {/* 헤더 - 인사말 & D-Day */}
       <div className="pt-2 pb-4 opacity-0 animate-fade-in-up">
         <div className="flex items-start justify-between">
@@ -357,56 +450,19 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* 연속 달성 스트릭 */}
-      {streak.currentStreak > 0 || streak.longestStreak > 0 ? (
-        <Card className={`overflow-hidden border-0 opacity-0 animate-fade-in-up animation-delay-100 ${
-          streak.todayComplete
-            ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30'
-            : 'bg-gradient-to-r from-slate-800/50 to-slate-900/50'
-        }`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  streak.todayComplete
-                    ? 'bg-gradient-to-br from-orange-500 to-red-500'
-                    : 'bg-slate-700'
-                }`}>
-                  <Flame className={`w-6 h-6 ${streak.todayComplete ? 'text-white' : 'text-slate-400'}`} />
-                </div>
-                <div>
-                  <div className="flex items-baseline gap-2">
-                    <span className={`text-3xl font-bold ${
-                      streak.todayComplete ? 'text-orange-500' : 'text-slate-400'
-                    }`}>
-                      {streak.currentStreak}
-                    </span>
-                    <span className="text-sm text-muted-foreground">일 연속</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {streak.todayComplete
-                      ? '오늘도 완료! 내일도 화이팅!'
-                      : '오늘 퀘스트를 완료하면 스트릭이 이어집니다'}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Trophy className="w-3 h-3 text-yellow-500" />
-                  <span>최장 {streak.longestStreak}일</span>
-                </div>
-                {streak.currentStreak >= 7 && (
-                  <div className="flex gap-0.5 mt-1">
-                    {[...Array(Math.min(streak.currentStreak, 7))].map((_, i) => (
-                      <Zap key={i} className="w-3 h-3 text-yellow-500" />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
+      {/* XP 바 */}
+      <div className="opacity-0 animate-fade-in-up animation-delay-50">
+        <XPBar compact={false} />
+      </div>
+
+      {/* 연속 달성 스트릭 (강화된 버전) */}
+      <div className="opacity-0 animate-fade-in-up animation-delay-100">
+        <StreakCard
+          currentStreak={streak.currentStreak}
+          longestStreak={streak.longestStreak}
+          isTodayComplete={streak.todayComplete}
+        />
+      </div>
 
       {/* 메인 스코어 카드 */}
       <Card className="overflow-hidden border-0 bg-gradient-to-br from-[#1a1a1e] to-[#141416] opacity-0 animate-fade-in-up animation-delay-100">
@@ -662,6 +718,11 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* 이번 주 챌린지 */}
+      <div className="opacity-0 animate-fade-in-up animation-delay-400">
+        <ChallengeList />
       </div>
     </div>
   )
