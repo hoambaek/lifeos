@@ -7,7 +7,7 @@ export interface AchievementDef {
   nameKo: string;
   descriptionKo: string;
   iconEmoji: string;
-  category: 'workout' | 'streak' | 'quest' | 'special';
+  category: 'workout' | 'streak' | 'quest' | 'special' | 'cognitive';
   tier: 'bronze' | 'silver' | 'gold' | 'platinum';
   xpReward: number;
   requirement: number;
@@ -357,6 +357,92 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     tier: 'gold',
     xpReward: 500,
     requirement: 50,
+  },
+
+  // ============================================
+  // 인지 성능 업적 (피터 틸 철학)
+  // "건강이 무너지면 사고의 깊이도 즉시 무너진다"
+  // ============================================
+  {
+    key: 'mind_fortress_7',
+    nameKo: '사고의 성벽',
+    descriptionKo: '7일 연속 루틴 완수 - 깊은 사고를 보호하는 성벽 구축',
+    iconEmoji: '🛡️',
+    category: 'cognitive',
+    tier: 'bronze',
+    xpReward: 150,
+    requirement: 7,
+  },
+  {
+    key: 'mind_fortress_30',
+    nameKo: '철의 요새',
+    descriptionKo: '30일 연속 루틴 완수 - 흔들림 없는 정신의 요새',
+    iconEmoji: '🏰',
+    category: 'cognitive',
+    tier: 'gold',
+    xpReward: 500,
+    requirement: 30,
+    freezeReward: 2,
+  },
+  {
+    key: 'unbreakable_discipline',
+    nameKo: '불굴의 규율',
+    descriptionKo: '프리즈 없이 21일 완수 - 규율은 타협할 수 없다',
+    iconEmoji: '⚔️',
+    category: 'cognitive',
+    tier: 'silver',
+    xpReward: 300,
+    requirement: 21,
+  },
+  {
+    key: 'deep_thinker_week',
+    nameKo: '깊은 사색가',
+    descriptionKo: '7일 연속 모든 퀘스트 + 운동 완료 (퍼펙트 데이)',
+    iconEmoji: '🧠',
+    category: 'cognitive',
+    tier: 'silver',
+    xpReward: 250,
+    requirement: 7,
+  },
+  {
+    key: 'neural_foundation_100',
+    nameKo: '신경 기초 마스터',
+    descriptionKo: '100회 운동으로 신경 기반 완성',
+    iconEmoji: '⚡',
+    category: 'cognitive',
+    tier: 'gold',
+    xpReward: 800,
+    requirement: 100,
+  },
+  {
+    key: 'morning_clarity_30',
+    nameKo: '아침 명료함',
+    descriptionKo: '30일 아침 운동으로 하루 시작 - 맑은 사고의 시작점',
+    iconEmoji: '🌅',
+    category: 'cognitive',
+    tier: 'gold',
+    xpReward: 400,
+    requirement: 30,
+  },
+  {
+    key: 'pressure_handler',
+    nameKo: '압박 속의 명료함',
+    descriptionKo: '스트릭 위험 상황에서 5번 연속 회복',
+    iconEmoji: '💎',
+    category: 'cognitive',
+    tier: 'silver',
+    xpReward: 200,
+    requirement: 5,
+  },
+  {
+    key: 'thought_shield_max',
+    nameKo: '사고력 철벽',
+    descriptionKo: '인지 방패 100% 달성 - 복잡한 문제도 명석하게',
+    iconEmoji: '🔮',
+    category: 'cognitive',
+    tier: 'platinum',
+    xpReward: 350,
+    requirement: 100,
   },
 ];
 

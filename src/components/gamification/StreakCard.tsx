@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useGamificationStore } from '@/stores/useGamificationStore'
-import { Flame, Snowflake, Zap, Trophy } from 'lucide-react'
+import { Flame, Snowflake, Zap, Trophy, Brain } from 'lucide-react'
 import { StreakFreezeDialog } from './StreakFreezeDialog'
+import { getStreakCognitiveMessage } from '@/lib/gamification/config'
 
 interface StreakCardProps {
   currentStreak: number
@@ -23,6 +24,7 @@ export function StreakCard({
 
   const streakFreezes = userGamification?.streakFreezes || 0
   const isHighStreak = currentStreak >= 7
+  const cognitiveMessage = getStreakCognitiveMessage(currentStreak)
 
   // 불꽃 강도 결정 (스트릭 길이에 따라)
   const fireIntensity =
@@ -89,10 +91,18 @@ export function StreakCard({
           </div>
 
           {/* 최장 스트릭 */}
-          <div className="flex items-center gap-2 text-xs text-zinc-500 mb-3">
+          <div className="flex items-center gap-2 text-xs text-zinc-500 mb-2">
             <Trophy className="w-3 h-3" />
             <span>최장 기록: {longestStreak}일</span>
           </div>
+
+          {/* 인지 상태 메시지 (피터 틸 철학) */}
+          {cognitiveMessage && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-violet-500/10 border border-violet-500/20 rounded-lg mb-3">
+              <Brain className="w-4 h-4 text-violet-400 flex-shrink-0" />
+              <span className="text-xs text-violet-300">{cognitiveMessage}</span>
+            </div>
+          )}
 
           {/* 스트릭 위험 알림 + 프리즈 버튼 */}
           {isStreakAtRisk && streakFreezes > 0 && (

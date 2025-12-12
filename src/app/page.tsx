@@ -11,7 +11,7 @@ import { useAppStore, PROTEIN_FOODS, WORKOUT_ROUTINE, PHASES, DailyLog } from '@
 import { useGamificationStore } from '@/stores/useGamificationStore'
 import { differenceInDays, format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { Droplets, Utensils, Moon, Dumbbell, Trophy, Flame, Target, Activity, Zap, RotateCcw, Settings } from 'lucide-react'
+import { Droplets, Utensils, Moon, Dumbbell, Trophy, Flame, Target, Activity, Zap, RotateCcw, Settings, Brain, Quote } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import {
   XPBar,
@@ -20,7 +20,9 @@ import {
   BadgeUnlockModal,
   StreakCard,
   ChallengeList,
+  CognitiveShield,
 } from '@/components/gamification'
+import { THIEL_QUOTES, QUEST_COGNITIVE_LABELS } from '@/lib/gamification/config'
 
 interface StreakData {
   currentStreak: number
@@ -51,6 +53,25 @@ export default function Dashboard() {
   const [celebration, setCelebration] = useState(false)
   const [latestInbody, setLatestInbody] = useState<{ inbodyScore: number } | null>(null)
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0, todayComplete: false })
+  const [totalWorkouts, setTotalWorkouts] = useState(0)
+  const [perfectDays, setPerfectDays] = useState(0)
+  const [thielQuote, setThielQuote] = useState('')
+
+  // 피터 틸 명언 설정 (하루에 한 번만 변경)
+  useEffect(() => {
+    const today = format(new Date(), 'yyyy-MM-dd')
+    const savedQuoteData = localStorage.getItem('thielQuote')
+    if (savedQuoteData) {
+      const { date, quote } = JSON.parse(savedQuoteData)
+      if (date === today) {
+        setThielQuote(quote)
+        return
+      }
+    }
+    const newQuote = THIEL_QUOTES[Math.floor(Math.random() * THIEL_QUOTES.length)]
+    setThielQuote(newQuote)
+    localStorage.setItem('thielQuote', JSON.stringify({ date: today, quote: newQuote }))
+  }, [])
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -88,11 +109,11 @@ export default function Dashboard() {
         console.log('No inbody data')
       }
 
-      // 스트릭 계산
+      // 스트릭 계산 및 인지 방패 데이터
       try {
         const end = new Date()
         const start = new Date()
-        start.setDate(start.getDate() - 60) // 최근 60일
+        start.setDate(start.getDate() - 180) // 최근 180일 (전체 기간)
         const streakRes = await fetch(
           `/api/log?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`
         )
@@ -100,6 +121,21 @@ export default function Dashboard() {
         if (logs && Array.isArray(logs)) {
           const streakData = calculateStreak(logs)
           setStreak(streakData)
+
+          // 인지 방패용 데이터 계산
+          const workoutCount = logs.filter((log: { workoutDone: boolean }) => log.workoutDone).length
+          setTotalWorkouts(workoutCount)
+
+          // 퍼펙트 데이 계산 (모든 퀘스트 + 운동 완료)
+          const perfectCount = logs.filter((log: {
+            waterDone: boolean
+            proteinAmount: number
+            cleanDiet: boolean
+            workoutDone: boolean
+          }) =>
+            log.waterDone && log.proteinAmount >= 150 && log.cleanDiet && log.workoutDone
+          ).length
+          setPerfectDays(perfectCount)
         }
       } catch (e) {
         console.log('No streak data')
@@ -460,9 +496,33 @@ const handleWorkoutToggle = async () => {
         </DialogContent>
       </Dialog>
 
+      {/* 피터 틸 명언 (인지 성능 철학) */}
+      {thielQuote && (
+        <div className="opacity-0 animate-fade-in-up animation-delay-50">
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20">
+            <Brain className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-violet-300 font-medium leading-relaxed">
+                &ldquo;{thielQuote}&rdquo;
+              </p>
+              <p className="text-xs text-violet-400/60 mt-1">— 피터 틸</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* XP 바 */}
-      <div className="opacity-0 animate-fade-in-up animation-delay-50">
+      <div className="opacity-0 animate-fade-in-up animation-delay-100">
         <XPBar compact={false} />
+      </div>
+
+      {/* 인지 방패 (피터 틸 철학) */}
+      <div className="opacity-0 animate-fade-in-up animation-delay-150">
+        <CognitiveShield
+          currentStreak={streak.currentStreak}
+          totalWorkouts={totalWorkouts}
+          perfectDays={perfectDays}
+        />
       </div>
 
       {/* 연속 달성 스트릭 (강화된 버전) */}
@@ -590,7 +650,7 @@ const handleWorkoutToggle = async () => {
                   </div>
                   <div>
                     <p className="font-medium">물 3L 마시기</p>
-                    <p className="text-xs text-muted-foreground">하루 수분 섭취</p>
+                    <p className="text-xs text-muted-foreground">{QUEST_COGNITIVE_LABELS.water.subtitle}</p>
                   </div>
                 </div>
                 <Toggle
@@ -614,7 +674,7 @@ const handleWorkoutToggle = async () => {
                   </div>
                   <div>
                     <p className="font-medium">단백질 {proteinGoal}g</p>
-                    <p className="text-xs text-muted-foreground">근육 성장의 핵심</p>
+                    <p className="text-xs text-muted-foreground">{QUEST_COGNITIVE_LABELS.protein.subtitle}</p>
                   </div>
                 </div>
                 <Dialog open={proteinDialogOpen} onOpenChange={setProteinDialogOpen}>
@@ -667,7 +727,7 @@ const handleWorkoutToggle = async () => {
                   </div>
                   <div>
                     <p className="font-medium">클린 다이어트</p>
-                    <p className="text-xs text-muted-foreground">야식 금지 & 건강한 식단</p>
+                    <p className="text-xs text-muted-foreground">{QUEST_COGNITIVE_LABELS.cleanDiet.subtitle}</p>
                   </div>
                 </div>
                 <Toggle

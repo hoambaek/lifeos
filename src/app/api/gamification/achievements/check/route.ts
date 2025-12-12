@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ACHIEVEMENTS } from '@/lib/gamification/achievements'
 import { calculateLevelFromXP } from '@/lib/gamification/config'
+import { calculateShieldLevel } from '@/lib/gamification/cognitiveShield'
 
 interface Stats {
   totalWorkouts: number
@@ -16,6 +17,10 @@ interface Stats {
   nightOwlCount: number
   currentLevel: number
   streakAfterFreeze: number // 프리즈 사용 후 스트릭
+  // 인지 업적용 추가 통계
+  cognitiveShieldLevel: number // 인지 방패 레벨 (0-100)
+  consecutivePerfectDays: number // 연속 퍼펙트 데이
+  streakRecoveries: number // 스트릭 위험에서 회복한 횟수
 }
 
 // 통계 계산
@@ -130,6 +135,49 @@ async function calculateStats(): Promise<Stats> {
   const gamification = await prisma.userGamification.findFirst()
   const currentLevel = gamification ? calculateLevelFromXP(gamification.totalXP) : 1
 
+  // 인지 업적용 통계 계산
+  // 1. 인지 방패 레벨
+  const cognitiveShieldLevel = calculateShieldLevel(currentStreak, workoutStats._count, perfectDays)
+
+  // 2. 연속 퍼펙트 데이 계산 (모든 퀘스트 + 운동 완료)
+  const perfectLogs = await prisma.dailyLog.findMany({
+    where: {
+      waterDone: true,
+      proteinAmount: { gte: 150 },
+      cleanDiet: true,
+      workoutDone: true,
+    },
+    orderBy: { date: 'desc' },
+    select: { date: true },
+  })
+
+  let consecutivePerfectDays = 0
+  if (perfectLogs.length > 0) {
+    let checkDate = new Date()
+    checkDate.setHours(0, 0, 0, 0)
+
+    for (const log of perfectLogs) {
+      const logDate = new Date(log.date)
+      logDate.setHours(0, 0, 0, 0)
+      const diffDays = Math.floor((checkDate.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24))
+
+      if (diffDays === 0 || diffDays === 1) {
+        consecutivePerfectDays++
+        checkDate = logDate
+      } else {
+        break
+      }
+    }
+  }
+
+  // 3. 스트릭 회복 횟수 (프리즈 사용 후 운동 완료한 횟수)
+  const streakRecoveries = await prisma.dailyLog.count({
+    where: {
+      streakFrozen: true,
+      workoutDone: true,
+    },
+  })
+
   return {
     totalWorkouts: workoutStats._count,
     workoutByPart,
@@ -143,6 +191,9 @@ async function calculateStats(): Promise<Stats> {
     nightOwlCount,
     currentLevel,
     streakAfterFreeze,
+    cognitiveShieldLevel,
+    consecutivePerfectDays,
+    streakRecoveries,
   }
 }
 
@@ -228,6 +279,25 @@ function checkAchievement(
       return stats.currentLevel >= 25
     case 'level_50':
       return stats.currentLevel >= 50
+
+    // 인지 성능 업적
+    case 'mind_fortress_7':
+      return stats.currentStreak >= 7 || stats.longestStreak >= 7
+    case 'mind_fortress_30':
+      return stats.currentStreak >= 30 || stats.longestStreak >= 30
+    case 'unbreakable_discipline':
+      // 프리즈 없이 21일 완수 - streakAfterFreeze가 0이고 currentStreak가 21 이상
+      return stats.currentStreak >= 21 && stats.streakAfterFreeze === 0
+    case 'deep_thinker_week':
+      return stats.consecutivePerfectDays >= 7
+    case 'neural_foundation_100':
+      return stats.totalWorkouts >= 100
+    case 'morning_clarity_30':
+      return stats.earlyBirdCount >= 30
+    case 'pressure_handler':
+      return stats.streakRecoveries >= 5
+    case 'thought_shield_max':
+      return stats.cognitiveShieldLevel >= 100
 
     default:
       return false
@@ -424,6 +494,30 @@ export async function GET() {
         case 'level_25':
         case 'level_50':
           current = stats.currentLevel
+          break
+        // 인지 성능 업적
+        case 'mind_fortress_7':
+        case 'mind_fortress_30':
+          current = Math.max(stats.currentStreak, stats.longestStreak)
+          break
+        case 'unbreakable_discipline':
+          // 프리즈 없이 연속 달성 일수
+          current = stats.streakAfterFreeze === 0 ? stats.currentStreak : 0
+          break
+        case 'deep_thinker_week':
+          current = stats.consecutivePerfectDays
+          break
+        case 'neural_foundation_100':
+          current = stats.totalWorkouts
+          break
+        case 'morning_clarity_30':
+          current = stats.earlyBirdCount
+          break
+        case 'pressure_handler':
+          current = stats.streakRecoveries
+          break
+        case 'thought_shield_max':
+          current = stats.cognitiveShieldLevel
           break
       }
 

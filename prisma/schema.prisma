@@ -52,6 +52,13 @@ model UserGamification {
   currentLevel    Int       @default(1)        // 현재 레벨 (1-100)
   streakFreezes   Int       @default(0)        // 보유 스트릭 프리즈 토큰
   streakFreezesUsed Int     @default(0)        // 사용한 프리즈 총 횟수
+
+  // 인지 방패 시스템 (피터 틸 철학)
+  cognitiveShieldLevel  Float   @default(0)    // 인지 방패 레벨 (0-100)
+  perfectRoutineDays    Int     @default(0)    // 퍼펙트 루틴 달성 일수
+  morningWorkoutCount   Int     @default(0)    // 아침 운동 횟수
+  pressureRecoveries    Int     @default(0)    // 스트릭 위기 회복 횟수
+
   createdAt       DateTime  @default(now()) @db.Timestamptz
   updatedAt       DateTime  @updatedAt @db.Timestamptz
 }
