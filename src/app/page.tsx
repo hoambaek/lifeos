@@ -297,6 +297,51 @@ const handleWorkoutToggle = async () => {
           })
         }
 
+        // 챌린지 진행도 업데이트
+        // 운동 부위에 따른 챌린지 매칭
+        const workoutPart = todayWorkout?.toLowerCase() || ''
+        const challengeUpdates: Promise<Response>[] = []
+
+        // 활성 챌린지 조회 후 해당하는 챌린지 업데이트
+        const challengeRes = await fetch('/api/gamification')
+        const challengeData = await challengeRes.json()
+
+        if (challengeData.userChallenges && Array.isArray(challengeData.userChallenges)) {
+          for (const uc of challengeData.userChallenges) {
+            const challenge = uc.challenge
+            if (!challenge || uc.completed) continue
+
+            let shouldUpdate = false
+
+            // 운동 부위별 챌린지 매칭
+            if (challenge.key.includes('chest') && (workoutPart.includes('가슴') || workoutPart.includes('chest'))) {
+              shouldUpdate = true
+            } else if (challenge.key.includes('leg') && (workoutPart.includes('하체') || workoutPart.includes('leg'))) {
+              shouldUpdate = true
+            } else if (challenge.key.includes('back') && (workoutPart.includes('등') || workoutPart.includes('back'))) {
+              shouldUpdate = true
+            } else if (challenge.key.includes('workout_5') || challenge.key.includes('workout_7')) {
+              // 일반 운동 횟수 챌린지
+              shouldUpdate = true
+            }
+
+            if (shouldUpdate) {
+              challengeUpdates.push(
+                fetch('/api/gamification/challenges', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ challengeId: challenge.id, increment: 1 }),
+                })
+              )
+            }
+          }
+        }
+
+        // 모든 챌린지 업데이트 실행
+        if (challengeUpdates.length > 0) {
+          await Promise.all(challengeUpdates)
+        }
+
         // 챌린지 데이터 새로고침
         const gamificationRes = await fetch('/api/gamification')
         const gamificationData = await gamificationRes.json()
@@ -305,6 +350,32 @@ const handleWorkoutToggle = async () => {
         }
         if (gamificationData.userChallenges) {
           setUserChallenges(gamificationData.userChallenges)
+        }
+
+        // 스트릭, 운동횟수, 퍼펙트데이 새로고침 (Cognitive Shield 업데이트용)
+        const end = new Date()
+        const start = new Date()
+        start.setDate(start.getDate() - 180)
+        const streakRes = await fetch(
+          `/api/log?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`
+        )
+        const logs = await streakRes.json()
+        if (logs && Array.isArray(logs)) {
+          const streakData = calculateStreak(logs)
+          setStreak(streakData)
+
+          const workoutCount = logs.filter((log: { workoutDone: boolean }) => log.workoutDone).length
+          setTotalWorkouts(workoutCount)
+
+          const perfectCount = logs.filter((log: {
+            waterDone: boolean
+            proteinAmount: number
+            cleanDiet: boolean
+            workoutDone: boolean
+          }) =>
+            log.waterDone && log.proteinAmount >= 150 && log.cleanDiet && log.workoutDone
+          ).length
+          setPerfectDays(perfectCount)
         }
       } catch (e) {
         console.error('Failed to update gamification:', e)
