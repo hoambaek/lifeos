@@ -222,8 +222,8 @@ export default function Dashboard() {
 const handleWorkoutToggle = async () => {
     const newState = !todayLog?.workoutDone
     if (newState) {
-      // 운동 완료 시 XP 획득
-      handleUpdateLog({ workoutDone: true, workoutPart: todayWorkout })
+      // 운동 완료 - 로그 먼저 업데이트 (챌린지 진행 포함)
+      await handleUpdateLog({ workoutDone: true, workoutPart: todayWorkout })
       setCelebration(true)
       setTimeout(() => setCelebration(false), 1000)
 
@@ -259,6 +259,16 @@ const handleWorkoutToggle = async () => {
             type: 'badge_unlock',
             data: { achievement: firstUnlocked },
           })
+        }
+
+        // 챌린지 데이터 새로고침
+        const gamificationRes = await fetch('/api/gamification')
+        const gamificationData = await gamificationRes.json()
+        if (gamificationData.activeChallenges) {
+          setActiveChallenges(gamificationData.activeChallenges)
+        }
+        if (gamificationData.userChallenges) {
+          setUserChallenges(gamificationData.userChallenges)
         }
       } catch (e) {
         console.error('Failed to update gamification:', e)
