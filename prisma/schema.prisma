@@ -141,6 +141,94 @@ model StreakFreezeLog {
 }
 
 // ============================================
+// 스위치온 다이어트 식단 시스템
+// ============================================
+
+// 스위치온 다이어트 설정
+model DietConfig {
+  id              Int       @id @default(autoincrement())
+  startDate       DateTime  @db.Timestamptz           // 다이어트 시작일
+  currentWeek     Int       @default(1)               // 현재 주차 (1-4, 5=유지기)
+  currentPhase    String    @default("fat_burning")   // fat_burning, accelerate, maintain
+  isActive        Boolean   @default(true)            // 활성화 여부
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @db.Timestamptz
+}
+
+// 일별 식단 계획 (28일 + 유지기)
+model DietPlan {
+  id              Int       @id @default(autoincrement())
+  dayNumber       Int                                 // 1-28 (4주), 29+ (유지기 패턴)
+  week            Int                                 // 1-4 (또는 5=유지기)
+  dayOfWeek       Int                                 // 0=일, 1=월, ... 6=토
+
+  // 식사별 메뉴
+  breakfast       String                              // 아침 식사
+  breakfastTime   String    @default("08:00-09:00")   // 아침 식사 시간
+  lunch           String                              // 점심 식사
+  lunchTime       String    @default("13:00-14:00")   // 점심 식사 시간
+  snack           String?                             // 간식
+  snackTime       String?   @default("15:30-16:30")   // 간식 시간
+  dinner          String                              // 저녁 식사
+  dinnerTime      String    @default("18:00-19:00")   // 저녁 식사 시간
+
+  // 단식 여부
+  isFastingDay    Boolean   @default(false)           // 24시간 단식일
+
+  // 주차별 참고사항 (JSON)
+  weekNotes       String?   @db.Text                  // 해당 주차 참고사항
+
+  // 허용/금지 식품 (JSON)
+  allowedFoods    String?   @db.Text                  // 허용 식품 목록
+  forbiddenFoods  String?   @db.Text                  // 금지 식품 목록
+
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+
+  @@unique([week, dayOfWeek])
+}
+
+// 사용자 식단 체크 기록
+model DietLog {
+  id              Int       @id @default(autoincrement())
+  date            DateTime  @unique @db.Timestamptz   // 날짜
+  dayNumber       Int                                 // 다이어트 N일차
+  week            Int                                 // N주차
+
+  // 식사 완료 체크
+  breakfastDone   Boolean   @default(false)
+  lunchDone       Boolean   @default(false)
+  snackDone       Boolean   @default(false)
+  dinnerDone      Boolean   @default(false)
+
+  // 단식 완료
+  fastingComplete Boolean   @default(false)
+
+  // 규칙 준수 체크
+  sleepHours      Float?                              // 수면 시간
+  waterCups       Int       @default(0)               // 물 섭취량 (컵)
+  exerciseDone    Boolean   @default(false)           // 운동 완료
+  noAlcohol       Boolean   @default(true)            // 금주
+  noFlour         Boolean   @default(true)            // 밀가루 금지
+  noSugar         Boolean   @default(true)            // 설탕 금지
+
+  // 메모
+  memo            String?   @db.Text
+
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+}
+
+// 스위치온 다이어트 규칙
+model DietRule {
+  id              Int       @id @default(autoincrement())
+  ruleNumber      Int       @unique                   // 규칙 번호 (1-10)
+  title           String                              // 규칙 제목
+  description     String    @db.Text                  // 규칙 설명
+  icon            String?                             // 아이콘 이모지
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+}
+
+// ============================================
 // 기존 모델
 // ============================================
 
