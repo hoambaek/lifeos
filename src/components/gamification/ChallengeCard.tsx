@@ -61,7 +61,7 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
       className={`challenge-card relative p-4 rounded-xl transition-all ${
         isCompleted
           ? 'bg-lime-500/10 border border-lime-500/30'
-          : 'bg-zinc-900/50 border border-zinc-800'
+          : 'bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800'
       }`}
     >
       {/* 완료 버스트 효과 */}
@@ -75,20 +75,20 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
           <div className="flex items-center gap-2">
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                isCompleted ? 'bg-lime-500/20' : 'bg-zinc-800'
+                isCompleted ? 'bg-lime-500/20' : 'bg-slate-200 dark:bg-zinc-800'
               }`}
             >
               {isCompleted ? (
-                <CheckCircle2 className="w-5 h-5 text-lime-400" />
+                <CheckCircle2 className="w-5 h-5 text-lime-500 dark:text-lime-400" />
               ) : (
-                <Target className="w-5 h-5 text-zinc-500" />
+                <Target className="w-5 h-5 text-slate-500 dark:text-zinc-500" />
               )}
             </div>
             <div>
-              <h4 className={`font-bold ${isCompleted ? 'text-lime-400' : 'text-zinc-300'}`}>
+              <h4 className={`font-bold ${isCompleted ? 'text-lime-600 dark:text-lime-400' : 'text-slate-700 dark:text-zinc-300'}`}>
                 {challenge.nameKo}
               </h4>
-              <p className="text-xs text-zinc-500">{challenge.descriptionKo}</p>
+              <p className="text-xs text-slate-500 dark:text-zinc-500">{challenge.descriptionKo}</p>
             </div>
           </div>
 
@@ -107,14 +107,14 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
         {/* 진행바 */}
         <div className="mb-3">
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-zinc-400">
+            <span className="text-slate-600 dark:text-zinc-400">
               {currentValue} / {challenge.targetValue}
             </span>
-            <span className="text-zinc-500">{Math.round(progress)}%</span>
+            <span className="text-slate-500 dark:text-zinc-500">{Math.round(progress)}%</span>
           </div>
           <Progress
             value={progress}
-            className={`h-2 ${isCompleted ? 'bg-lime-500/20' : 'bg-zinc-800'}`}
+            className={`h-2 ${isCompleted ? 'bg-lime-500/20' : 'bg-slate-200 dark:bg-zinc-800'}`}
           />
         </div>
 
@@ -122,13 +122,13 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs">
             {/* 남은 시간 */}
-            <div className="flex items-center gap-1 text-zinc-500">
+            <div className="flex items-center gap-1 text-slate-500 dark:text-zinc-500">
               <Clock className="w-3 h-3" />
               <span>{daysRemaining}일 남음</span>
             </div>
 
             {/* 보상 */}
-            <div className="flex items-center gap-1 text-lime-400">
+            <div className="flex items-center gap-1 text-green-600 dark:text-lime-400">
               <Gift className="w-3 h-3" />
               <span>+{challenge.xpReward} XP</span>
             </div>
@@ -153,7 +153,7 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
           )}
 
           {isClaimed && (
-            <span className="text-xs text-zinc-500">수령 완료</span>
+            <span className="text-xs text-slate-500 dark:text-zinc-500">수령 완료</span>
           )}
         </div>
       </div>

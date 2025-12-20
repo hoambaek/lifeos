@@ -9,9 +9,9 @@ export function ChallengeList() {
 
   if (activeChallenges.length === 0) {
     return (
-      <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800 text-center">
-        <Target className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-        <p className="text-sm text-zinc-500">현재 활성화된 챌린지가 없습니다</p>
+      <div className="p-4 rounded-xl bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 text-center">
+        <Target className="w-8 h-8 text-slate-400 dark:text-zinc-600 mx-auto mb-2" />
+        <p className="text-sm text-slate-500 dark:text-zinc-500">현재 활성화된 챌린지가 없습니다</p>
       </div>
     )
   }
@@ -19,8 +19,8 @@ export function ChallengeList() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-2">
-        <Target className="w-5 h-5 text-lime-400" />
-        <h3 className="font-bold text-zinc-300">이번 주 챌린지</h3>
+        <Target className="w-5 h-5 text-green-600 dark:text-lime-400" />
+        <h3 className="font-bold text-slate-700 dark:text-zinc-300">이번 주 챌린지</h3>
       </div>
 
       {activeChallenges.map((challenge) => {

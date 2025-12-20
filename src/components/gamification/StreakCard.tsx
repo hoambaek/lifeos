@@ -38,7 +38,7 @@ export function StreakCard({
         className={`streak-card relative overflow-hidden rounded-xl p-4 ${
           isTodayComplete
             ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30'
-            : 'bg-zinc-900/50 border border-zinc-800'
+            : 'bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800'
         }`}
       >
         {/* 불꽃 배경 효과 */}
@@ -52,12 +52,12 @@ export function StreakCard({
             <div className="flex items-center gap-3">
               <div
                 className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  isTodayComplete ? 'bg-orange-500/30' : 'bg-zinc-800'
+                  isTodayComplete ? 'bg-orange-500/30' : 'bg-slate-200 dark:bg-zinc-800'
                 }`}
               >
                 <Flame
                   className={`w-7 h-7 ${
-                    isTodayComplete ? 'text-orange-400 fire-effect' : 'text-zinc-500'
+                    isTodayComplete ? 'text-orange-400 fire-effect' : 'text-slate-400 dark:text-zinc-500'
                   }`}
                 />
               </div>
@@ -65,12 +65,12 @@ export function StreakCard({
                 <div className="flex items-baseline gap-1">
                   <span
                     className={`text-3xl font-black ${
-                      isTodayComplete ? 'text-orange-400' : 'text-zinc-400'
+                      isTodayComplete ? 'text-orange-400' : 'text-slate-600 dark:text-zinc-400'
                     }`}
                   >
                     {currentStreak}
                   </span>
-                  <span className="text-sm text-zinc-500">일 연속</span>
+                  <span className="text-sm text-slate-500 dark:text-zinc-500">일 연속</span>
                 </div>
                 {isHighStreak && (
                   <div className="flex items-center gap-1 mt-0.5">
@@ -91,7 +91,7 @@ export function StreakCard({
           </div>
 
           {/* 최장 스트릭 */}
-          <div className="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-500 mb-2">
             <Trophy className="w-3 h-3" />
             <span>최장 기록: {longestStreak}일</span>
           </div>
@@ -99,8 +99,8 @@ export function StreakCard({
           {/* 인지 상태 메시지 (피터 틸 철학) */}
           {cognitiveMessage && (
             <div className="flex items-center gap-2 px-3 py-2 bg-violet-500/10 border border-violet-500/20 rounded-lg mb-3">
-              <Brain className="w-4 h-4 text-violet-400 flex-shrink-0" />
-              <span className="text-xs text-violet-300">{cognitiveMessage}</span>
+              <Brain className="w-4 h-4 text-violet-500 dark:text-violet-400 flex-shrink-0" />
+              <span className="text-xs text-violet-600 dark:text-violet-300">{cognitiveMessage}</span>
             </div>
           )}
 

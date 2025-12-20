@@ -571,12 +571,12 @@ const handleWorkoutToggle = async () => {
       {thielQuote && (
         <div className="opacity-0 animate-fade-in-up animation-delay-50">
           <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20">
-            <Brain className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
+            <Brain className="w-5 h-5 text-violet-600 dark:text-violet-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm text-violet-300 font-medium leading-relaxed">
+              <p className="text-sm text-violet-700 dark:text-violet-300 font-medium leading-relaxed">
                 &ldquo;{thielQuote}&rdquo;
               </p>
-              <p className="text-xs text-violet-400/60 mt-1">— 피터 틸</p>
+              <p className="text-xs text-violet-600/70 dark:text-violet-400/60 mt-1">— 피터 틸</p>
             </div>
           </div>
         </div>
@@ -606,7 +606,7 @@ const handleWorkoutToggle = async () => {
       </div>
 
       {/* 메인 스코어 카드 */}
-      <Card className="overflow-hidden border-0 bg-gradient-to-br from-[#1a1a1e] to-[#141416] opacity-0 animate-fade-in-up animation-delay-100">
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-slate-100 to-white dark:from-[#1a1a1e] dark:to-[#141416] opacity-0 animate-fade-in-up animation-delay-100 shadow-sm dark:shadow-none">
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -653,7 +653,7 @@ const handleWorkoutToggle = async () => {
 
           {/* 인바디 점수 뱃지 */}
           {latestInbody && (
-            <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-accent" />
                 <span className="text-sm text-muted-foreground">인바디 점수</span>

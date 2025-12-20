@@ -23,34 +23,34 @@ export function XPBar({ compact = false }: XPBarProps) {
         <div className="level-badge">
           <span className="text-xs font-bold">Lv.{userGamification.currentLevel}</span>
         </div>
-        <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
+        <div className="flex-1 h-2 bg-slate-200 dark:bg-zinc-800 rounded-full overflow-hidden">
           <div
             className="h-full xp-bar-fill"
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className="text-xs text-zinc-500">{userGamification.totalXP} XP</span>
+        <span className="text-xs text-slate-500 dark:text-zinc-500">{userGamification.totalXP} XP</span>
       </div>
     )
   }
 
   return (
-    <div className="xp-bar-container p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+    <div className="xp-bar-container p-4 rounded-xl bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className="level-badge-large">
-            <Zap className="w-4 h-4 text-yellow-400" />
+            <Zap className="w-4 h-4 text-yellow-500 dark:text-yellow-400" />
             <span className="font-bold text-lg">Lv.{userGamification.currentLevel}</span>
           </div>
-          <span className="text-sm text-zinc-400">{title}</span>
+          <span className="text-sm text-slate-500 dark:text-zinc-400">{title}</span>
         </div>
         <div className="text-right">
-          <span className="text-lg font-bold text-lime-400">{userGamification.totalXP.toLocaleString()}</span>
-          <span className="text-sm text-zinc-500 ml-1">XP</span>
+          <span className="text-lg font-bold text-green-600 dark:text-lime-400">{userGamification.totalXP.toLocaleString()}</span>
+          <span className="text-sm text-slate-500 dark:text-zinc-500 ml-1">XP</span>
         </div>
       </div>
 
-      <div className="relative h-3 bg-zinc-800 rounded-full overflow-hidden">
+      <div className="relative h-3 bg-slate-200 dark:bg-zinc-800 rounded-full overflow-hidden">
         <div
           className="absolute inset-y-0 left-0 xp-bar-fill rounded-full"
           style={{ width: `${progress}%` }}
@@ -58,7 +58,7 @@ export function XPBar({ compact = false }: XPBarProps) {
         {progress > 0 && <div className="absolute inset-0 xp-bar-shimmer" />}
       </div>
 
-      <div className="flex justify-between mt-1.5 text-xs text-zinc-500">
+      <div className="flex justify-between mt-1.5 text-xs text-slate-500 dark:text-zinc-500">
         <span>{progress}%</span>
         <span>다음 레벨까지 {xpToNext.toLocaleString()} XP</span>
       </div>

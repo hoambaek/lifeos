@@ -69,51 +69,51 @@ export function CognitiveShield({
             <span className={`text-2xl font-black ${colorClasses.text}`}>
               {shieldData.level}
             </span>
-            <span className="text-sm text-zinc-500">%</span>
+            <span className="text-sm text-slate-500 dark:text-zinc-500">%</span>
           </div>
         </div>
 
         {/* 프로그레스 바 */}
-        <div className="relative h-3 rounded-full bg-zinc-800 overflow-hidden mb-3">
+        <div className="relative h-3 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden mb-3">
           <div
             className={`absolute inset-y-0 left-0 ${colorClasses.progress} rounded-full transition-all duration-500`}
             style={{ width: `${shieldData.level}%` }}
           />
           {/* 마일스톤 마커 */}
           <div className="absolute inset-0 flex justify-between px-1">
-            <div className="w-px bg-zinc-700" style={{ marginLeft: '30%' }} />
-            <div className="w-px bg-zinc-700" style={{ marginLeft: '60%' }} />
-            <div className="w-px bg-zinc-700" style={{ marginLeft: '85%' }} />
+            <div className="w-px bg-slate-300 dark:bg-zinc-700" style={{ marginLeft: '30%' }} />
+            <div className="w-px bg-slate-300 dark:bg-zinc-700" style={{ marginLeft: '60%' }} />
+            <div className="w-px bg-slate-300 dark:bg-zinc-700" style={{ marginLeft: '85%' }} />
           </div>
         </div>
 
         {/* 상태 메시지 */}
         <div className="flex items-center gap-2">
           <Brain className={`w-4 h-4 ${colorClasses.text} flex-shrink-0`} />
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-slate-600 dark:text-zinc-400">
             {shieldData.statusMessage.message}
           </p>
         </div>
 
         {/* 구성 요소 표시 */}
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-zinc-800">
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-zinc-800">
           <div className="flex items-center gap-1">
             <Zap className="w-3 h-3 text-orange-400" />
-            <span className="text-xs text-zinc-500">
-              스트릭 <span className="text-zinc-300">{currentStreak}일</span>
+            <span className="text-xs text-slate-500 dark:text-zinc-500">
+              스트릭 <span className="text-slate-700 dark:text-zinc-300">{currentStreak}일</span>
             </span>
           </div>
           <div className="flex items-center gap-1">
             <TrendingUp className="w-3 h-3 text-green-400" />
-            <span className="text-xs text-zinc-500">
-              운동 <span className="text-zinc-300">{totalWorkouts}회</span>
+            <span className="text-xs text-slate-500 dark:text-zinc-500">
+              운동 <span className="text-slate-700 dark:text-zinc-300">{totalWorkouts}회</span>
             </span>
           </div>
           {perfectDays > 0 && (
             <div className="flex items-center gap-1">
               <Shield className="w-3 h-3 text-violet-400" />
-              <span className="text-xs text-zinc-500">
-                퍼펙트 <span className="text-zinc-300">{perfectDays}일</span>
+              <span className="text-xs text-slate-500 dark:text-zinc-500">
+                퍼펙트 <span className="text-slate-700 dark:text-zinc-300">{perfectDays}일</span>
               </span>
             </div>
           )}
