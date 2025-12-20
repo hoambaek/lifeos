@@ -194,10 +194,24 @@ export default function DietPage() {
     }
   }
 
-  // 식사 체크 토글
+  // 식사 체크 토글 (Optimistic Update)
   const handleMealToggle = async (meal: 'breakfast' | 'lunch' | 'snack' | 'dinner', value: boolean) => {
+    // 이전 상태 저장 (롤백용)
+    const previousData = todayData
+
+    // UI 즉시 업데이트 (Optimistic)
+    if (todayData) {
+      setTodayData({
+        ...todayData,
+        log: {
+          ...todayData.log,
+          [`${meal}Done`]: value,
+        } as typeof todayData.log,
+      })
+    }
+
     try {
-      await fetch('/api/diet', {
+      const res = await fetch('/api/diet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -206,16 +220,30 @@ export default function DietPage() {
           [`${meal}Done`]: value,
         }),
       })
-      loadData(selectedDate)
+      if (!res.ok) throw new Error('Failed')
     } catch (error) {
+      // 실패 시 롤백
+      setTodayData(previousData)
       console.error('Failed to update meal:', error)
     }
   }
 
-  // 단식 완료 토글
+  // 단식 완료 토글 (Optimistic Update)
   const handleFastingToggle = async (value: boolean) => {
+    const previousData = todayData
+
+    if (todayData) {
+      setTodayData({
+        ...todayData,
+        log: {
+          ...todayData.log,
+          fastingComplete: value,
+        } as typeof todayData.log,
+      })
+    }
+
     try {
-      await fetch('/api/diet', {
+      const res = await fetch('/api/diet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -224,16 +252,29 @@ export default function DietPage() {
           fastingComplete: value,
         }),
       })
-      loadData(selectedDate)
+      if (!res.ok) throw new Error('Failed')
     } catch (error) {
+      setTodayData(previousData)
       console.error('Failed to update fasting:', error)
     }
   }
 
-  // 규칙 체크 토글
+  // 규칙 체크 토글 (Optimistic Update)
   const handleRuleToggle = async (rule: 'noAlcohol' | 'noFlour' | 'noSugar', value: boolean) => {
+    const previousData = todayData
+
+    if (todayData) {
+      setTodayData({
+        ...todayData,
+        log: {
+          ...todayData.log,
+          [rule]: value,
+        } as typeof todayData.log,
+      })
+    }
+
     try {
-      await fetch('/api/diet', {
+      const res = await fetch('/api/diet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -242,8 +283,9 @@ export default function DietPage() {
           [rule]: value,
         }),
       })
-      loadData(selectedDate)
+      if (!res.ok) throw new Error('Failed')
     } catch (error) {
+      setTodayData(previousData)
       console.error('Failed to update rule:', error)
     }
   }
