@@ -260,7 +260,7 @@ export default function DietPage() {
   }
 
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-  const weekTheme = todayData ? WEEK_THEMES[Math.min(todayData.week, 5)] : WEEK_THEMES[1]
+  const weekTheme = todayData ? WEEK_THEMES[Math.max(1, Math.min(todayData.week, 5))] : WEEK_THEMES[1]
 
   if (isLoading) {
     return (
@@ -271,7 +271,7 @@ export default function DietPage() {
   }
 
   // 다이어트 시작 전
-  if (!todayData) {
+  if (!todayData || !todayData.plan) {
     return (
       <div className="p-4 space-y-6">
         <div className="pt-2 pb-4">
@@ -390,7 +390,7 @@ export default function DietPage() {
 
   // 완료율 계산
   const calculateProgress = () => {
-    if (!todayData.log) return 0
+    if (!todayData.log || !todayData.plan) return 0
     const log = todayData.log
     const plan = todayData.plan
 
