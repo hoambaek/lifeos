@@ -21,6 +21,11 @@ import {
   Heart,
 } from 'lucide-react'
 
+// 스켈레톤 컴포넌트
+const SkeletonBox = ({ className }: { className?: string }) => (
+  <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+)
+
 interface InBodyRecord {
   id: number
   date: string
@@ -111,6 +116,7 @@ export default function GuidePage() {
   const [selectedEquivalent, setSelectedEquivalent] = useState<string>('닭가슴살 100g')
   const [latestInbody, setLatestInbody] = useState<InBodyRecord | null>(null)
   const [prevInbody, setPrevInbody] = useState<InBodyRecord | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   // 현재 단계 계산
   const daysPassed = config?.startDate
@@ -123,27 +129,31 @@ export default function GuidePage() {
 
   useEffect(() => {
     const loadData = async () => {
-      // 설정 로드
-      if (!config) {
-        const configRes = await fetch('/api/config')
-        const configData = await configRes.json()
-        if (configData) {
-          useAppStore.getState().setConfig(configData)
-        }
-      }
-
-      // 인바디 데이터 로드
       try {
-        const inbodyRes = await fetch('/api/inbody')
-        const inbodyData = await inbodyRes.json()
-        if (inbodyData && inbodyData.length > 0) {
-          setLatestInbody(inbodyData[0])
-          if (inbodyData.length > 1) {
-            setPrevInbody(inbodyData[1])
+        // 설정 로드
+        if (!config) {
+          const configRes = await fetch('/api/config')
+          const configData = await configRes.json()
+          if (configData) {
+            useAppStore.getState().setConfig(configData)
           }
         }
-      } catch (e) {
-        console.log('인바디 데이터 없음')
+
+        // 인바디 데이터 로드
+        try {
+          const inbodyRes = await fetch('/api/inbody')
+          const inbodyData = await inbodyRes.json()
+          if (inbodyData && inbodyData.length > 0) {
+            setLatestInbody(inbodyData[0])
+            if (inbodyData.length > 1) {
+              setPrevInbody(inbodyData[1])
+            }
+          }
+        } catch (e) {
+          console.log('인바디 데이터 없음')
+        }
+      } finally {
+        setIsLoading(false)
       }
     }
     loadData()
@@ -300,6 +310,60 @@ export default function GuidePage() {
   }
 
   const personalizedGuides = generatePersonalizedGuides()
+
+  // 스켈레톤 로딩 UI
+  if (isLoading) {
+    return (
+      <div className="p-4 space-y-4 pb-20">
+        {/* 맞춤 가이드 스켈레톤 */}
+        <Card className="border-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <SkeletonBox className="h-6 w-24" />
+              <SkeletonBox className="h-4 w-20" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              {[1, 2, 3, 4].map((i) => (
+                <SkeletonBox key={i} className="h-14 w-full" />
+              ))}
+            </div>
+            {[1, 2, 3].map((i) => (
+              <SkeletonBox key={i} className="h-32 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* 대체 식품 환산기 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <SkeletonBox className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {[1, 2, 3].map((i) => (
+                <SkeletonBox key={i} className="h-8 w-24" />
+              ))}
+            </div>
+            <SkeletonBox className="h-48 w-full" />
+          </CardContent>
+        </Card>
+
+        {/* 단계별 전략 가이드 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <SkeletonBox className="h-6 w-36" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <SkeletonBox key={i} className="h-32 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 space-y-4 pb-20">

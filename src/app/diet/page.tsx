@@ -13,6 +13,11 @@ import {
   Droplets, Ban, Wine, Wheat, Candy, Play, Info, BookOpen, Settings, RotateCcw
 } from 'lucide-react'
 
+// 스켈레톤 컴포넌트
+const SkeletonBox = ({ className }: { className?: string }) => (
+  <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+)
+
 interface DietConfig {
   id: number
   startDate: string
@@ -304,10 +309,96 @@ export default function DietPage() {
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
   const weekTheme = todayData ? WEEK_THEMES[Math.max(1, Math.min(todayData.week, 5))] : WEEK_THEMES[1]
 
+  // 스켈레톤 로딩 UI
   if (isLoading) {
     return (
-      <div className="p-4 flex items-center justify-center min-h-[60vh]">
-        <div className="animate-pulse text-muted-foreground">로딩 중...</div>
+      <div className="p-4 space-y-4 pb-24">
+        {/* 헤더 스켈레톤 */}
+        <div className="pt-2 pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <SkeletonBox className="h-7 w-24 mb-1" />
+              <SkeletonBox className="h-4 w-32" />
+            </div>
+            <div className="flex items-center gap-1">
+              <SkeletonBox className="h-10 w-10 rounded-lg" />
+              <SkeletonBox className="h-10 w-10 rounded-lg" />
+            </div>
+          </div>
+        </div>
+
+        {/* 날짜 선택 스켈레톤 */}
+        <Card className="border-0 bg-card/50">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <SkeletonBox className="h-10 w-10 rounded-lg" />
+              <SkeletonBox className="h-6 w-32" />
+              <SkeletonBox className="h-10 w-10 rounded-lg" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 진행률 카드 스켈레톤 */}
+        <Card className="border-0 bg-gradient-to-br from-orange-500/20 to-red-500/10">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <SkeletonBox className="h-5 w-5" />
+                <SkeletonBox className="h-5 w-24" />
+              </div>
+              <SkeletonBox className="h-8 w-12" />
+            </div>
+            <SkeletonBox className="h-2 w-full" />
+          </CardContent>
+        </Card>
+
+        {/* 식사 카드 스켈레톤 */}
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="border-0 bg-card/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <SkeletonBox className="w-10 h-10 rounded-xl" />
+                    <div>
+                      <SkeletonBox className="h-3 w-16 mb-1" />
+                      <SkeletonBox className="h-5 w-28" />
+                    </div>
+                  </div>
+                  <SkeletonBox className="w-14 h-8 rounded-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* 금기 사항 스켈레톤 */}
+        <div className="space-y-2">
+          <SkeletonBox className="h-4 w-32" />
+          <div className="grid grid-cols-3 gap-2">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="border-0 bg-card/50">
+                <CardContent className="p-3 text-center">
+                  <SkeletonBox className="w-6 h-6 mx-auto mb-1 rounded-lg" />
+                  <SkeletonBox className="h-3 w-12 mx-auto mb-1" />
+                  <SkeletonBox className="w-4 h-4 mx-auto rounded-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* 주차별 허용 식품 스켈레톤 */}
+        <Card className="border-0 bg-card/50">
+          <CardContent className="p-4">
+            <SkeletonBox className="h-4 w-36 mb-3" />
+            <div className="flex flex-wrap gap-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <SkeletonBox key={i} className="h-6 w-16 rounded-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }

@@ -23,6 +23,7 @@ import {
   Sparkles,
   ImageIcon,
 } from 'lucide-react'
+
 import {
   LineChart,
   Line,
@@ -32,6 +33,11 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+
+// 스켈레톤 컴포넌트
+const SkeletonBox = ({ className }: { className?: string }) => (
+  <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+)
 
 interface InBodyRecord {
   id: number
@@ -65,6 +71,7 @@ export default function InBodyPage() {
   const [latestRecord, setLatestRecord] = useState<InBodyRecord | null>(null)
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isRecordsLoading, setIsRecordsLoading] = useState(true)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [selectedFileName, setSelectedFileName] = useState<string>('')
   const [analyzeError, setAnalyzeError] = useState<string>('')
@@ -93,8 +100,9 @@ export default function InBodyPage() {
     loadRecords()
   }, [])
 
-  const loadRecords = async () => {
+  const loadRecords = async (showLoading = true) => {
     try {
+      if (showLoading) setIsRecordsLoading(true)
       const [allRes, latestRes] = await Promise.all([
         fetch('/api/inbody'),
         fetch('/api/inbody?latest=true'),
@@ -106,6 +114,8 @@ export default function InBodyPage() {
       setLatestRecord(latestData)
     } catch (error) {
       console.error('Failed to load records:', error)
+    } finally {
+      setIsRecordsLoading(false)
     }
   }
 
@@ -203,7 +213,7 @@ export default function InBodyPage() {
 
       if (res.ok) {
         setSaveSuccess(true)
-        loadRecords()
+        loadRecords(false)
         // 2초 후 다이얼로그 닫기
         setTimeout(() => {
           setIsUploadOpen(false)
@@ -330,6 +340,65 @@ export default function InBodyPage() {
     }))
 
   const aiAnalysis = latestRecord ? parseAIAnalysis(latestRecord.aiAnalysis) : null
+
+  // 스켈레톤 로딩 UI
+  if (isRecordsLoading) {
+    return (
+      <div className="p-4 space-y-4 pb-20">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between">
+          <SkeletonBox className="h-7 w-28" />
+          <SkeletonBox className="h-9 w-24" />
+        </div>
+
+        {/* 인바디 점수 스켈레톤 */}
+        <Card className="bg-gradient-to-br from-blue-500 to-purple-600">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-2">
+              <SkeletonBox className="h-4 w-20 mx-auto bg-white/20" />
+              <SkeletonBox className="h-14 w-24 mx-auto bg-white/20" />
+              <SkeletonBox className="h-4 w-16 mx-auto bg-white/20" />
+              <SkeletonBox className="h-3 w-32 mx-auto bg-white/20 mt-2" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 주요 지표 스켈레톤 */}
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="pt-4">
+                <SkeletonBox className="h-4 w-16 mb-2" />
+                <SkeletonBox className="h-8 w-20" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* AI 분석 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <SkeletonBox className="h-6 w-24" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <SkeletonBox className="h-4 w-full" />
+            <SkeletonBox className="h-4 w-3/4" />
+            <SkeletonBox className="h-24 w-full" />
+          </CardContent>
+        </Card>
+
+        {/* 차트 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <SkeletonBox className="h-6 w-24" />
+          </CardHeader>
+          <CardContent>
+            <SkeletonBox className="h-48 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 space-y-4 pb-20">

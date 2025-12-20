@@ -10,6 +10,11 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from '
 import { ko } from 'date-fns/locale'
 import { Scale, Check, X } from 'lucide-react'
 
+// 스켈레톤 컴포넌트
+const SkeletonBox = ({ className }: { className?: string }) => (
+  <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+)
+
 interface DailyLogData {
   id: number
   date: string
@@ -26,9 +31,42 @@ export default function LogPage() {
   const [weight, setWeight] = useState('')
   const [monthLogs, setMonthLogs] = useState<DailyLogData[]>([])
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [isLoading, setIsLoading] = useState(true)
 
-  // 월별 로그 로드
+  // 초기 데이터 로드
   useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        // 오늘 로그와 월별 로그 병렬 로드
+        const start = format(startOfMonth(selectedDate), 'yyyy-MM-dd')
+        const end = format(endOfMonth(selectedDate), 'yyyy-MM-dd')
+
+        const [todayRes, monthRes] = await Promise.all([
+          fetch('/api/log'),
+          fetch(`/api/log?start=${start}&end=${end}`),
+        ])
+
+        const todayData = await todayRes.json()
+        const monthData = await monthRes.json()
+
+        if (todayData) {
+          setTodayLog(todayData)
+          if (todayData.weight) {
+            setWeight(todayData.weight.toString())
+          }
+        }
+        setMonthLogs(monthData || [])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadInitialData()
+  }, [setTodayLog])
+
+  // 월 변경 시 월별 로그 로드
+  useEffect(() => {
+    if (isLoading) return // 초기 로딩 중에는 스킵
+
     const loadMonthLogs = async () => {
       const start = format(startOfMonth(selectedDate), 'yyyy-MM-dd')
       const end = format(endOfMonth(selectedDate), 'yyyy-MM-dd')
@@ -37,22 +75,7 @@ export default function LogPage() {
       setMonthLogs(data || [])
     }
     loadMonthLogs()
-  }, [selectedDate])
-
-  // 오늘 로그 로드
-  useEffect(() => {
-    const loadTodayLog = async () => {
-      const res = await fetch('/api/log')
-      const data = await res.json()
-      if (data) {
-        setTodayLog(data)
-        if (data.weight) {
-          setWeight(data.weight.toString())
-        }
-      }
-    }
-    loadTodayLog()
-  }, [setTodayLog])
+  }, [selectedDate, isLoading])
 
   // 체중 저장
   const handleSaveWeight = async () => {
@@ -86,6 +109,56 @@ export default function LogPage() {
     const quests = [log.waterDone, log.cleanDiet, log.workoutDone, log.proteinAmount >= 150]
     const completed = quests.filter(Boolean).length
     return completed >= 3 ? 'success' : completed >= 1 ? 'partial' : 'fail'
+  }
+
+  // 스켈레톤 로딩 UI
+  if (isLoading) {
+    return (
+      <div className="p-4 space-y-4">
+        {/* 체중 기록 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <SkeletonBox className="h-6 w-28" />
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <SkeletonBox className="h-10 flex-1" />
+              <SkeletonBox className="h-10 w-16" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 단백질 계산기 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <SkeletonBox className="h-6 w-28" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <SkeletonBox key={i} className="h-16" />
+              ))}
+            </div>
+            <SkeletonBox className="h-24 w-full" />
+          </CardContent>
+        </Card>
+
+        {/* 캘린더 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <SkeletonBox className="h-6 w-28" />
+          </CardHeader>
+          <CardContent>
+            <SkeletonBox className="h-72 w-full" />
+            <div className="flex justify-center gap-4 mt-4">
+              <SkeletonBox className="h-4 w-20" />
+              <SkeletonBox className="h-4 w-20" />
+              <SkeletonBox className="h-4 w-20" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (

@@ -19,6 +19,22 @@ import { format, subDays, subWeeks, startOfWeek, endOfWeek } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { TrendingDown, Target, Flame, Activity, Zap, Droplets } from 'lucide-react'
 
+// 스켈레톤 컴포넌트
+const SkeletonBox = ({ className }: { className?: string }) => (
+  <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+)
+
+const SkeletonCard = ({ className }: { className?: string }) => (
+  <Card className={className}>
+    <CardHeader className="pb-2">
+      <SkeletonBox className="h-6 w-32" />
+    </CardHeader>
+    <CardContent>
+      <SkeletonBox className="h-48 w-full" />
+    </CardContent>
+  </Card>
+)
+
 interface DailyLogData {
   id: number
   date: string
@@ -52,61 +68,66 @@ export default function StatsPage() {
     workout: 0,
     protein: 0,
   })
+  const [isLoading, setIsLoading] = useState(true)
 
   // 데이터 로드
   useEffect(() => {
     const loadData = async () => {
-      // 설정 로드
-      if (!config) {
-        const configRes = await fetch('/api/config')
-        const configData = await configRes.json()
-        if (configData) {
-          useAppStore.getState().setConfig(configData)
+      try {
+        // 설정 로드
+        if (!config) {
+          const configRes = await fetch('/api/config')
+          const configData = await configRes.json()
+          if (configData) {
+            useAppStore.getState().setConfig(configData)
+          }
         }
+
+        // 기간에 따른 로그 조회
+        let start: Date
+        const end = new Date()
+
+        switch (timeRange) {
+          case 'week':
+            start = subDays(end, 7)
+            break
+          case 'month':
+            start = subDays(end, 30)
+            break
+          case 'all':
+            start = config?.startDate ? new Date(config.startDate) : subDays(end, 180)
+            break
+        }
+
+        const [logRes, inbodyRes] = await Promise.all([
+          fetch(`/api/log?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`),
+          fetch('/api/inbody'),
+        ])
+        const data = await logRes.json()
+        const inbodyData = await inbodyRes.json()
+        setLogs(data || [])
+        setInbodyRecords(inbodyData || [])
+
+        // 이번 주 통계 계산
+        const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
+        const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 })
+        const weekLogs = (data || []).filter((log: DailyLogData) => {
+          const logDate = new Date(log.date)
+          return logDate >= weekStart && logDate <= weekEnd
+        })
+
+        const totalDays = weekLogs.length || 1
+        setWeeklyStats({
+          water: Math.round((weekLogs.filter((l: DailyLogData) => l.waterDone).length / totalDays) * 100),
+          cleanDiet: Math.round((weekLogs.filter((l: DailyLogData) => l.cleanDiet).length / totalDays) * 100),
+          workout: Math.round((weekLogs.filter((l: DailyLogData) => l.workoutDone).length / totalDays) * 100),
+          protein: Math.round(
+            (weekLogs.filter((l: DailyLogData) => l.proteinAmount >= 150).length / totalDays) * 100
+          ),
+        })
+      } finally {
+        setIsLoading(false)
       }
-
-      // 기간에 따른 로그 조회
-      let start: Date
-      const end = new Date()
-
-      switch (timeRange) {
-        case 'week':
-          start = subDays(end, 7)
-          break
-        case 'month':
-          start = subDays(end, 30)
-          break
-        case 'all':
-          start = config?.startDate ? new Date(config.startDate) : subDays(end, 180)
-          break
-      }
-
-      const [logRes, inbodyRes] = await Promise.all([
-        fetch(`/api/log?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`),
-        fetch('/api/inbody'),
-      ])
-      const data = await logRes.json()
-      const inbodyData = await inbodyRes.json()
-      setLogs(data || [])
-      setInbodyRecords(inbodyData || [])
-
-      // 이번 주 통계 계산
-      const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
-      const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 })
-      const weekLogs = (data || []).filter((log: DailyLogData) => {
-        const logDate = new Date(log.date)
-        return logDate >= weekStart && logDate <= weekEnd
-      })
-
-      const totalDays = weekLogs.length || 1
-      setWeeklyStats({
-        water: Math.round((weekLogs.filter((l: DailyLogData) => l.waterDone).length / totalDays) * 100),
-        cleanDiet: Math.round((weekLogs.filter((l: DailyLogData) => l.cleanDiet).length / totalDays) * 100),
-        workout: Math.round((weekLogs.filter((l: DailyLogData) => l.workoutDone).length / totalDays) * 100),
-        protein: Math.round(
-          (weekLogs.filter((l: DailyLogData) => l.proteinAmount >= 150).length / totalDays) * 100
-        ),
-      })
     }
 
     loadData()
@@ -144,6 +165,96 @@ export default function StatsPage() {
   const muscleChange = lastInbody && firstInbody ? lastInbody.skeletalMuscle - firstInbody.skeletalMuscle : 0
   const fatChange = lastInbody && firstInbody ? lastInbody.bodyFatMass - firstInbody.bodyFatMass : 0
   const fatPercentChange = lastInbody && firstInbody ? lastInbody.bodyFatPercent - firstInbody.bodyFatPercent : 0
+
+  // 스켈레톤 로딩 UI
+  if (isLoading) {
+    return (
+      <div className="p-4 space-y-4">
+        {/* 체중 변화 그래프 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <SkeletonBox className="h-6 w-24" />
+              <div className="flex gap-1">
+                <SkeletonBox className="h-8 w-12" />
+                <SkeletonBox className="h-8 w-12" />
+                <SkeletonBox className="h-8 w-12" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <SkeletonBox className="h-48 w-full mb-4" />
+            <div className="flex flex-col items-center gap-2">
+              <SkeletonBox className="h-4 w-20" />
+              <SkeletonBox className="h-8 w-24" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 인바디 지표 변화 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <SkeletonBox className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <SkeletonBox className="h-56 w-full mb-4" />
+            <div className="grid grid-cols-3 gap-2">
+              <SkeletonBox className="h-20 w-full" />
+              <SkeletonBox className="h-20 w-full" />
+              <SkeletonBox className="h-20 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 이번 주 습관 달성률 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <SkeletonBox className="h-6 w-36" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i}>
+                <div className="flex justify-between mb-1">
+                  <SkeletonBox className="h-4 w-20" />
+                  <SkeletonBox className="h-4 w-10" />
+                </div>
+                <SkeletonBox className="h-2 w-full" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* 목표 달성 현황 스켈레톤 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <SkeletonBox className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-center items-center gap-4 mb-4">
+              <div className="flex flex-col items-center gap-1">
+                <SkeletonBox className="h-4 w-10" />
+                <SkeletonBox className="h-6 w-16" />
+              </div>
+              <SkeletonBox className="h-6 w-6" />
+              <div className="flex flex-col items-center gap-1">
+                <SkeletonBox className="h-4 w-10" />
+                <SkeletonBox className="h-6 w-16" />
+              </div>
+              <SkeletonBox className="h-6 w-6" />
+              <div className="flex flex-col items-center gap-1">
+                <SkeletonBox className="h-4 w-10" />
+                <SkeletonBox className="h-6 w-16" />
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <SkeletonBox className="h-10 w-20" />
+              <SkeletonBox className="h-4 w-24" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 space-y-4">
