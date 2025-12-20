@@ -58,10 +58,10 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
 
   return (
     <div
-      className={`challenge-card relative p-4 rounded-xl transition-all ${
+      className={`challenge-card relative p-4 rounded-xl transition-all duration-500 ${
         isCompleted
-          ? 'bg-lime-500/10 border border-lime-500/30'
-          : 'bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800'
+          ? 'bg-gradient-to-br from-lime-100 via-green-50 to-emerald-50 dark:from-lime-950/40 dark:via-green-950/30 dark:to-emerald-950/30 border border-lime-300/50 dark:border-lime-700/50 shadow-lg shadow-lime-200/30 dark:shadow-lime-900/20'
+          : 'bg-gradient-to-br from-emerald-50/80 via-green-50/50 to-teal-50/30 dark:from-emerald-950/30 dark:via-green-950/20 dark:to-teal-950/20 border border-emerald-200/60 dark:border-emerald-900/30 shadow-sm shadow-emerald-100/50 dark:shadow-none'
       }`}
     >
       {/* 완료 버스트 효과 */}

@@ -9,7 +9,7 @@ export function ChallengeList() {
 
   if (activeChallenges.length === 0) {
     return (
-      <div className="p-4 rounded-xl bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 text-center">
+      <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 dark:from-zinc-900/50 dark:via-zinc-900/40 dark:to-zinc-900/30 border border-slate-200/80 dark:border-zinc-800 shadow-sm shadow-slate-100/50 dark:shadow-none text-center">
         <Target className="w-8 h-8 text-slate-400 dark:text-zinc-600 mx-auto mb-2" />
         <p className="text-sm text-slate-500 dark:text-zinc-500">현재 활성화된 챌린지가 없습니다</p>
       </div>

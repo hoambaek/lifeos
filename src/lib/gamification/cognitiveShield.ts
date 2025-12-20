@@ -79,33 +79,33 @@ export const getShieldColorClasses = (status: ShieldStatus) => {
   switch (status) {
     case 'critical':
       return {
-        bg: 'bg-red-500/20',
-        border: 'border-red-500/30',
-        text: 'text-red-400',
+        bg: 'bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 dark:from-red-950/40 dark:via-rose-950/30 dark:to-pink-950/30',
+        border: 'border-red-200/60 dark:border-red-800/50',
+        text: 'text-red-500 dark:text-red-400',
         progress: 'bg-red-500',
         glow: 'shadow-red-500/30',
       };
     case 'vulnerable':
       return {
-        bg: 'bg-orange-500/20',
-        border: 'border-orange-500/30',
-        text: 'text-orange-400',
+        bg: 'bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-orange-950/40 dark:via-amber-950/30 dark:to-yellow-950/30',
+        border: 'border-orange-200/60 dark:border-orange-800/50',
+        text: 'text-orange-500 dark:text-orange-400',
         progress: 'bg-orange-500',
         glow: 'shadow-orange-500/30',
       };
     case 'protected':
       return {
-        bg: 'bg-blue-500/20',
-        border: 'border-blue-500/30',
-        text: 'text-blue-400',
+        bg: 'bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-violet-950/30',
+        border: 'border-blue-200/60 dark:border-blue-800/50',
+        text: 'text-blue-500 dark:text-blue-400',
         progress: 'bg-blue-500',
         glow: 'shadow-blue-500/30',
       };
     case 'fortified':
       return {
-        bg: 'bg-amber-500/20',
-        border: 'border-amber-500/30',
-        text: 'text-amber-400',
+        bg: 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/40 dark:via-yellow-950/30 dark:to-orange-950/30',
+        border: 'border-amber-200/60 dark:border-amber-800/50',
+        text: 'text-amber-500 dark:text-amber-400',
         progress: 'bg-gradient-to-r from-amber-500 to-yellow-400',
         glow: 'shadow-amber-500/40',
       };

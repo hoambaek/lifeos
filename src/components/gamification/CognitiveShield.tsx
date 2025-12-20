@@ -37,8 +37,8 @@ export function CognitiveShield({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl p-4 ${colorClasses.bg} border ${colorClasses.border} ${
-        shieldData.status === 'fortified' ? 'shield-fortified' : ''
+      className={`relative overflow-hidden rounded-xl p-4 ${colorClasses.bg} border ${colorClasses.border} shadow-sm ${
+        shieldData.status === 'fortified' ? 'shield-fortified shadow-lg shadow-amber-200/30 dark:shadow-amber-900/20' : 'shadow-slate-100/50 dark:shadow-none'
       }`}
     >
       {/* 배경 효과 */}

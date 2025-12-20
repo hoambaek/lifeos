@@ -660,7 +660,7 @@ const handleWorkoutToggle = async () => {
       </div>
 
       {/* 메인 스코어 카드 */}
-      <Card className="overflow-hidden border-0 bg-gradient-to-br from-slate-100 to-white dark:from-[#1a1a1e] dark:to-[#141416] opacity-0 animate-fade-in-up animation-delay-100 shadow-sm dark:shadow-none">
+      <Card className="overflow-hidden border border-amber-200/50 dark:border-amber-900/30 bg-gradient-to-br from-amber-50 via-orange-50/50 to-yellow-50/30 dark:from-[#1a1a1e] dark:via-amber-950/20 dark:to-[#141416] opacity-0 animate-fade-in-up animation-delay-100 shadow-sm shadow-amber-100/50 dark:shadow-none">
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -766,10 +766,10 @@ const handleWorkoutToggle = async () => {
         </div>
         <div className="space-y-2">
           {/* 물 3L */}
-          <Card className={`border-0 touch-scale transition-all duration-500 ${
+          <Card className={`touch-scale transition-all duration-500 ${
             waterCount >= 6
-              ? 'bg-gradient-to-br from-cyan-500/20 via-blue-500/15 to-sky-500/20 ring-2 ring-cyan-400/50'
-              : 'bg-card/50'
+              ? 'border border-cyan-300/50 dark:border-cyan-700/50 bg-gradient-to-br from-cyan-100 via-blue-50 to-sky-100 dark:from-cyan-950/40 dark:via-blue-950/30 dark:to-sky-950/40 ring-2 ring-cyan-400/50 shadow-lg shadow-cyan-200/30 dark:shadow-cyan-900/20'
+              : 'border border-sky-200/60 dark:border-sky-900/30 bg-gradient-to-br from-sky-50 via-cyan-50/50 to-blue-50/30 dark:from-sky-950/30 dark:via-cyan-950/20 dark:to-blue-950/30 shadow-sm shadow-sky-100/50 dark:shadow-none'
           }`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
@@ -823,7 +823,11 @@ const handleWorkoutToggle = async () => {
           </Card>
 
           {/* 단백질 */}
-          <Card className="border-0 bg-card/50 touch-scale">
+          <Card className={`touch-scale transition-all duration-500 ${
+            proteinProgress >= 100
+              ? 'border border-rose-300/50 dark:border-rose-700/50 bg-gradient-to-br from-rose-100 via-red-50 to-orange-50 dark:from-rose-950/40 dark:via-red-950/30 dark:to-orange-950/30 shadow-lg shadow-rose-200/30 dark:shadow-rose-900/20'
+              : 'border border-rose-200/60 dark:border-rose-900/30 bg-gradient-to-br from-rose-50/80 via-red-50/50 to-orange-50/30 dark:from-rose-950/30 dark:via-red-950/20 dark:to-orange-950/20 shadow-sm shadow-rose-100/50 dark:shadow-none'
+          }`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -884,7 +888,11 @@ const handleWorkoutToggle = async () => {
           <Dumbbell className="w-4 h-4" />
           오늘의 운동
         </h2>
-        <Card className={`border-0 overflow-hidden ${todayLog?.workoutDone ? 'bg-gradient-to-br from-primary/20 to-accent/10' : 'bg-card/50'}`}>
+        <Card className={`overflow-hidden transition-all duration-500 ${
+          todayLog?.workoutDone
+            ? 'border border-violet-300/50 dark:border-violet-700/50 bg-gradient-to-br from-violet-100 via-purple-50 to-fuchsia-50 dark:from-violet-950/40 dark:via-purple-950/30 dark:to-fuchsia-950/30 shadow-lg shadow-violet-200/30 dark:shadow-violet-900/20'
+            : 'border border-violet-200/60 dark:border-violet-900/30 bg-gradient-to-br from-violet-50/80 via-purple-50/50 to-indigo-50/30 dark:from-violet-950/30 dark:via-purple-950/20 dark:to-indigo-950/20 shadow-sm shadow-violet-100/50 dark:shadow-none'
+        }`}>
           <CardContent className="p-5">
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-1">
