@@ -58,6 +58,12 @@ export default function Dashboard() {
   const [thielQuote, setThielQuote] = useState('')
   const [waterCount, setWaterCount] = useState(0)
 
+  // 로딩 상태 (개별 섹션별)
+  const [isConfigLoading, setIsConfigLoading] = useState(true)
+  const [isInbodyLoading, setIsInbodyLoading] = useState(true)
+  const [isStreakLoading, setIsStreakLoading] = useState(true)
+  const [isGamificationLoading, setIsGamificationLoading] = useState(true)
+
   // 물 섭취량 로드 (localStorage에서)
   useEffect(() => {
     const today = format(new Date(), 'yyyy-MM-dd')
@@ -107,16 +113,19 @@ export default function Dashboard() {
   // 초기 데이터 로드
   useEffect(() => {
     const loadData = async () => {
-      const configRes = await fetch('/api/config')
-      const configData = await configRes.json()
+      // Config & Log 로드 (병렬)
+      const configPromise = fetch('/api/config').then(res => res.json())
+      const logPromise = fetch('/api/log').then(res => res.json())
+
+      const [configData, logData] = await Promise.all([configPromise, logPromise])
+
       if (configData) {
         setConfig(configData)
       } else {
         setIsSetupOpen(true)
       }
+      setIsConfigLoading(false)
 
-      const logRes = await fetch('/api/log')
-      const logData = await logRes.json()
       if (logData) {
         setTodayLog(logData)
       } else {
@@ -129,73 +138,69 @@ export default function Dashboard() {
         })
       }
 
-      // 최신 인바디 점수 로드
-      try {
-        const inbodyRes = await fetch('/api/inbody?latest=true')
-        const inbodyData = await inbodyRes.json()
-        if (inbodyData?.inbodyScore) {
-          setLatestInbody(inbodyData)
-        }
-      } catch (e) {
-        console.log('No inbody data')
-      }
+      // 인바디 로드 (별도)
+      fetch('/api/inbody?latest=true')
+        .then(res => res.json())
+        .then(inbodyData => {
+          if (inbodyData?.inbodyScore) {
+            setLatestInbody(inbodyData)
+          }
+        })
+        .catch(() => console.log('No inbody data'))
+        .finally(() => setIsInbodyLoading(false))
 
-      // 스트릭 계산 및 인지 방패 데이터
-      try {
-        const end = new Date()
-        const start = new Date()
-        start.setDate(start.getDate() - 180) // 최근 180일 (전체 기간)
-        const streakRes = await fetch(
-          `/api/log?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`
-        )
-        const logs = await streakRes.json()
-        if (logs && Array.isArray(logs)) {
-          const streakData = calculateStreak(logs)
-          setStreak(streakData)
+      // 스트릭 계산 및 인지 방패 데이터 (별도)
+      const end = new Date()
+      const start = new Date()
+      start.setDate(start.getDate() - 180)
+      fetch(`/api/log?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`)
+        .then(res => res.json())
+        .then(logs => {
+          if (logs && Array.isArray(logs)) {
+            const streakData = calculateStreak(logs)
+            setStreak(streakData)
 
-          // 인지 방패용 데이터 계산
-          const workoutCount = logs.filter((log: { workoutDone: boolean }) => log.workoutDone).length
-          setTotalWorkouts(workoutCount)
+            const workoutCount = logs.filter((log: { workoutDone: boolean }) => log.workoutDone).length
+            setTotalWorkouts(workoutCount)
 
-          // 퍼펙트 데이 계산 (모든 퀘스트 + 운동 완료)
-          const perfectCount = logs.filter((log: {
-            waterDone: boolean
-            proteinAmount: number
-            cleanDiet: boolean
-            workoutDone: boolean
-          }) =>
-            log.waterDone && log.proteinAmount >= 150 && log.cleanDiet && log.workoutDone
-          ).length
-          setPerfectDays(perfectCount)
-        }
-      } catch (e) {
-        console.log('No streak data')
-      }
+            const perfectCount = logs.filter((log: {
+              waterDone: boolean
+              proteinAmount: number
+              cleanDiet: boolean
+              workoutDone: boolean
+            }) =>
+              log.waterDone && log.proteinAmount >= 150 && log.cleanDiet && log.workoutDone
+            ).length
+            setPerfectDays(perfectCount)
+          }
+        })
+        .catch(() => console.log('No streak data'))
+        .finally(() => setIsStreakLoading(false))
 
-      // 게이미피케이션 데이터 로드
-      try {
-        const gamificationRes = await fetch('/api/gamification')
-        const gamificationData = await gamificationRes.json()
-        if (gamificationData) {
-          if (gamificationData.userGamification) {
-            setUserGamification(gamificationData.userGamification)
+      // 게이미피케이션 데이터 로드 (별도)
+      fetch('/api/gamification')
+        .then(res => res.json())
+        .then(gamificationData => {
+          if (gamificationData) {
+            if (gamificationData.userGamification) {
+              setUserGamification(gamificationData.userGamification)
+            }
+            if (gamificationData.achievements) {
+              setAchievements(gamificationData.achievements)
+            }
+            if (gamificationData.userAchievements) {
+              setUserAchievements(gamificationData.userAchievements)
+            }
+            if (gamificationData.activeChallenges) {
+              setActiveChallenges(gamificationData.activeChallenges)
+            }
+            if (gamificationData.userChallenges) {
+              setUserChallenges(gamificationData.userChallenges)
+            }
           }
-          if (gamificationData.achievements) {
-            setAchievements(gamificationData.achievements)
-          }
-          if (gamificationData.userAchievements) {
-            setUserAchievements(gamificationData.userAchievements)
-          }
-          if (gamificationData.activeChallenges) {
-            setActiveChallenges(gamificationData.activeChallenges)
-          }
-          if (gamificationData.userChallenges) {
-            setUserChallenges(gamificationData.userChallenges)
-          }
-        }
-      } catch (e) {
-        console.log('No gamification data')
-      }
+        })
+        .catch(() => console.log('No gamification data'))
+        .finally(() => setIsGamificationLoading(false))
     }
     loadData()
   }, [setConfig, setTodayLog, setUserGamification, setAchievements, setUserAchievements, setActiveChallenges, setUserChallenges])
@@ -490,51 +495,14 @@ const handleWorkoutToggle = async () => {
     todayLog?.workoutDone,
   ].filter(Boolean).length
 
-  if (!config) {
-    return (
-      <Dialog open={isSetupOpen} onOpenChange={setIsSetupOpen}>
-        <DialogContent className="max-w-sm mx-auto glass-card border-0">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold gradient-text">시작 설정</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">시작 체중 (kg)</label>
-              <Input
-                type="number"
-                step="0.1"
-                value={setupData.startWeight}
-                onChange={(e) => setSetupData({ ...setupData, startWeight: parseFloat(e.target.value) })}
-                className="mt-1 bg-secondary/50 border-0 h-12 text-lg"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">목표 체중 (kg)</label>
-              <Input
-                type="number"
-                step="0.1"
-                value={setupData.goalWeight}
-                onChange={(e) => setSetupData({ ...setupData, goalWeight: parseFloat(e.target.value) })}
-                className="mt-1 bg-secondary/50 border-0 h-12 text-lg"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">시작일</label>
-              <Input
-                type="date"
-                value={setupData.startDate}
-                onChange={(e) => setSetupData({ ...setupData, startDate: e.target.value })}
-                className="mt-1 bg-secondary/50 border-0 h-12"
-              />
-            </div>
-            <Button onClick={handleSaveSetup} className="w-full h-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
-              시작하기
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    )
-  }
+  // 스켈레톤 컴포넌트
+  const SkeletonBox = ({ className }: { className?: string }) => (
+    <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+  )
+
+  const SkeletonCard = ({ className }: { className?: string }) => (
+    <div className={`animate-pulse rounded-2xl bg-slate-200/80 dark:bg-zinc-800/80 ${className}`} />
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
@@ -578,63 +546,107 @@ const handleWorkoutToggle = async () => {
           {/* D+DAY 대형 디스플레이 */}
           <div className="flex items-end justify-between mb-5 opacity-0 animate-fade-in-up animation-delay-50">
             <div>
-              <span className="text-5xl font-black tracking-tighter gradient-text">D+{daysPassed}</span>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="h-1.5 w-24 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all duration-500"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-                <span className="text-xs font-medium text-slate-400 dark:text-zinc-500">180일</span>
-              </div>
+              {isConfigLoading ? (
+                <>
+                  <SkeletonBox className="h-12 w-32 mb-2" />
+                  <SkeletonBox className="h-1.5 w-24" />
+                </>
+              ) : (
+                <>
+                  <span className="text-5xl font-black tracking-tighter gradient-text">D+{daysPassed}</span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="h-1.5 w-24 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all duration-500"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-slate-400 dark:text-zinc-500">180일</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* 인바디 점수 뱃지 */}
-            {latestInbody && (
+            {isInbodyLoading ? (
+              <div className="flex flex-col items-end">
+                <SkeletonBox className="h-3 w-12 mb-1" />
+                <SkeletonBox className="h-8 w-14" />
+              </div>
+            ) : latestInbody ? (
               <div className="flex flex-col items-end">
                 <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-zinc-500 font-semibold">INBODY</span>
                 <span className="text-3xl font-black text-amber-500 dark:text-amber-400">{latestInbody.inbodyScore}</span>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* XP 바 */}
           <div className="opacity-0 animate-fade-in-up animation-delay-75">
-            <XPBar compact={false} />
+            {isGamificationLoading ? (
+              <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60">
+                <div className="flex items-center justify-between mb-2">
+                  <SkeletonBox className="h-5 w-20" />
+                  <SkeletonBox className="h-4 w-24" />
+                </div>
+                <SkeletonBox className="h-3 w-full rounded-full" />
+              </div>
+            ) : (
+              <XPBar compact={false} />
+            )}
           </div>
 
           {/* 스트릭 + 퀘스트 미니 카드 (2열) */}
           <div className="grid grid-cols-2 gap-3 mt-4 opacity-0 animate-fade-in-up animation-delay-100">
             {/* 스트릭 미니 */}
-            <div className={`p-4 rounded-2xl backdrop-blur-sm transition-all ${
-              streak.todayComplete
-                ? 'bg-gradient-to-br from-orange-200/80 to-amber-100/60 dark:from-orange-950/60 dark:to-amber-950/40 border border-orange-300/60 dark:border-orange-700/40 shadow-lg shadow-orange-200/40 dark:shadow-orange-900/30'
-                : 'bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm'
-            }`}>
-              <div className="flex items-center gap-2 mb-1">
-                <Flame className={`w-4 h-4 ${streak.todayComplete ? 'text-orange-500' : 'text-slate-400 dark:text-zinc-500'}`} />
-                <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-zinc-500">STREAK</span>
+            {isStreakLoading ? (
+              <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60">
+                <div className="flex items-center gap-2 mb-2">
+                  <SkeletonBox className="h-4 w-4 rounded" />
+                  <SkeletonBox className="h-3 w-12" />
+                </div>
+                <SkeletonBox className="h-8 w-16" />
               </div>
-              <p className={`text-3xl font-black ${streak.todayComplete ? 'text-orange-600 dark:text-orange-400' : 'text-slate-700 dark:text-zinc-300'}`}>
-                {streak.currentStreak}<span className="text-sm font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">일</span>
-              </p>
-            </div>
+            ) : (
+              <div className={`p-4 rounded-2xl backdrop-blur-sm transition-all ${
+                streak.todayComplete
+                  ? 'bg-gradient-to-br from-orange-200/80 to-amber-100/60 dark:from-orange-950/60 dark:to-amber-950/40 border border-orange-300/60 dark:border-orange-700/40 shadow-lg shadow-orange-200/40 dark:shadow-orange-900/30'
+                  : 'bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm'
+              }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Flame className={`w-4 h-4 ${streak.todayComplete ? 'text-orange-500' : 'text-slate-400 dark:text-zinc-500'}`} />
+                  <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-zinc-500">STREAK</span>
+                </div>
+                <p className={`text-3xl font-black ${streak.todayComplete ? 'text-orange-600 dark:text-orange-400' : 'text-slate-700 dark:text-zinc-300'}`}>
+                  {streak.currentStreak}<span className="text-sm font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">일</span>
+                </p>
+              </div>
+            )}
 
             {/* 퀘스트 미니 */}
-            <div className={`p-4 rounded-2xl backdrop-blur-sm transition-all ${
-              questsCompleted >= 3
-                ? 'bg-gradient-to-br from-emerald-200/80 to-green-100/60 dark:from-emerald-950/60 dark:to-green-950/40 border border-emerald-300/60 dark:border-emerald-700/40 shadow-lg shadow-emerald-200/40 dark:shadow-emerald-900/30'
-                : 'bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm'
-            }`}>
-              <div className="flex items-center gap-2 mb-1">
-                <Target className={`w-4 h-4 ${questsCompleted >= 3 ? 'text-emerald-500' : 'text-slate-400 dark:text-zinc-500'}`} />
-                <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-zinc-500">QUEST</span>
+            {isConfigLoading ? (
+              <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60">
+                <div className="flex items-center gap-2 mb-2">
+                  <SkeletonBox className="h-4 w-4 rounded" />
+                  <SkeletonBox className="h-3 w-12" />
+                </div>
+                <SkeletonBox className="h-8 w-12" />
               </div>
-              <p className={`text-3xl font-black ${questsCompleted >= 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-zinc-300'}`}>
-                {questsCompleted}<span className="text-sm font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">/3</span>
-              </p>
-            </div>
+            ) : (
+              <div className={`p-4 rounded-2xl backdrop-blur-sm transition-all ${
+                questsCompleted >= 3
+                  ? 'bg-gradient-to-br from-emerald-200/80 to-green-100/60 dark:from-emerald-950/60 dark:to-green-950/40 border border-emerald-300/60 dark:border-emerald-700/40 shadow-lg shadow-emerald-200/40 dark:shadow-emerald-900/30'
+                  : 'bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm'
+              }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className={`w-4 h-4 ${questsCompleted >= 3 ? 'text-emerald-500' : 'text-slate-400 dark:text-zinc-500'}`} />
+                  <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-zinc-500">QUEST</span>
+                </div>
+                <p className={`text-3xl font-black ${questsCompleted >= 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-zinc-300'}`}>
+                  {questsCompleted}<span className="text-sm font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">/3</span>
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -932,7 +944,18 @@ const handleWorkoutToggle = async () => {
             챌린지 섹션
         ═══════════════════════════════════════════════ */}
         <div className="opacity-0 animate-fade-in-up animation-delay-300">
-          <ChallengeList />
+          {isGamificationLoading ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-2">
+                <SkeletonBox className="h-5 w-24" />
+                <SkeletonBox className="h-4 w-16" />
+              </div>
+              <SkeletonCard className="h-20 w-full" />
+              <SkeletonCard className="h-20 w-full" />
+            </div>
+          ) : (
+            <ChallengeList />
+          )}
         </div>
 
         {/* 하단 여백 & 초기화 버튼 */}
