@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Toggle } from '@/components/ui/toggle'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { format, addDays, subDays } from 'date-fns'
@@ -11,7 +10,7 @@ import { ko } from 'date-fns/locale'
 import {
   Utensils, Coffee, Sun, Moon, Zap, ChevronLeft, ChevronRight,
   Calendar, AlertCircle, CheckCircle2, XCircle, Flame, Timer,
-  Droplets, Ban, Wine, Wheat, Candy, Play, Info, BookOpen
+  Droplets, Ban, Wine, Wheat, Candy, Play, Info, BookOpen, Settings, RotateCcw
 } from 'lucide-react'
 
 interface DietConfig {
@@ -94,7 +93,9 @@ export default function DietPage() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [isStartDialogOpen, setIsStartDialogOpen] = useState(false)
   const [isRulesDialogOpen, setIsRulesDialogOpen] = useState(false)
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [newStartDate, setNewStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [weekNotes, setWeekNotes] = useState<{
     tips: string[]
     allowed: string[]
@@ -171,6 +172,25 @@ export default function DietPage() {
       }
     } catch (error) {
       console.error('Failed to start diet:', error)
+    }
+  }
+
+  // 다이어트 재설정 (시작일 변경)
+  const handleResetDiet = async () => {
+    try {
+      // 다이어트 시작일 재설정
+      const res = await fetch('/api/diet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'start', startDate: newStartDate }),
+      })
+
+      if (res.ok) {
+        setIsResetDialogOpen(false)
+        loadData(selectedDate)
+      }
+    } catch (error) {
+      console.error('Failed to reset diet:', error)
     }
   }
 
@@ -407,29 +427,83 @@ export default function DietPage() {
               {weekTheme.name}
             </p>
           </div>
-          <Dialog open={isRulesDialogOpen} onOpenChange={setIsRulesDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground">
-                <BookOpen className="w-5 h-5" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-sm glass-card border-0 max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold">📋 식단 규칙</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3 pt-2">
-                {rules.map((rule) => (
-                  <div key={rule.id} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30">
-                    <span className="text-xl">{rule.icon}</span>
-                    <div>
-                      <p className="font-medium text-sm">{rule.title}</p>
-                      <p className="text-xs text-muted-foreground">{rule.description}</p>
-                    </div>
+          <div className="flex items-center gap-1">
+            {/* 시작일 재설정 버튼 */}
+            <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-orange-500">
+                  <Settings className="w-5 h-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-sm glass-card border-0">
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                    <RotateCcw className="w-5 h-5 text-orange-500" />
+                    식단 시작일 재설정
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      현재 시작일: <span className="font-semibold">{todayData.config.startDate ? format(new Date(todayData.config.startDate), 'yyyy년 M월 d일') : '-'}</span>
+                    </p>
                   </div>
-                ))}
-              </div>
-            </DialogContent>
-          </Dialog>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">새 시작일</label>
+                    <Input
+                      type="date"
+                      value={newStartDate}
+                      onChange={(e) => setNewStartDate(e.target.value)}
+                      className="mt-1 bg-secondary/50 border-0 h-12"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    시작일을 변경하면 D+일수가 새로 계산됩니다.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setIsResetDialogOpen(false)}
+                    >
+                      취소
+                    </Button>
+                    <Button
+                      onClick={handleResetDiet}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                    >
+                      변경하기
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* 규칙 보기 버튼 */}
+            <Dialog open={isRulesDialogOpen} onOpenChange={setIsRulesDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-muted-foreground">
+                  <BookOpen className="w-5 h-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-sm glass-card border-0 max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-bold">📋 식단 규칙</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 pt-2">
+                  {rules.map((rule) => (
+                    <div key={rule.id} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30">
+                      <span className="text-xl">{rule.icon}</span>
+                      <div>
+                        <p className="font-medium text-sm">{rule.title}</p>
+                        <p className="text-xs text-muted-foreground">{rule.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
@@ -530,13 +604,24 @@ export default function DietPage() {
                       <p className="font-medium">{todayData.plan.dinner}</p>
                     </div>
                   </div>
-                  <Toggle
-                    pressed={todayData.log?.dinnerDone}
-                    onPressedChange={(pressed) => handleMealToggle('dinner', pressed)}
-                    className={`w-12 h-7 rounded-full ${
-                      todayData.log?.dinnerDone ? 'bg-purple-500' : 'bg-secondary'
+                  <button
+                    onClick={() => handleMealToggle('dinner', !todayData.log?.dinnerDone)}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 ${
+                      todayData.log?.dinnerDone
+                        ? 'bg-gradient-to-r from-purple-400 to-violet-500 shadow-lg shadow-purple-500/30'
+                        : 'bg-slate-300 dark:bg-zinc-600'
                     }`}
-                  />
+                  >
+                    <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
+                      todayData.log?.dinnerDone ? 'left-7' : 'left-1'
+                    }`}>
+                      {todayData.log?.dinnerDone ? (
+                        <CheckCircle2 className="w-4 h-4 text-purple-500" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-slate-400" />
+                      )}
+                    </div>
+                  </button>
                 </div>
               </div>
             )}
@@ -563,13 +648,24 @@ export default function DietPage() {
                       <p className="font-medium">{todayData.plan.breakfast}</p>
                     </div>
                   </div>
-                  <Toggle
-                    pressed={todayData.log?.breakfastDone}
-                    onPressedChange={(pressed) => handleMealToggle('breakfast', pressed)}
-                    className={`w-12 h-7 rounded-full ${
-                      todayData.log?.breakfastDone ? 'bg-amber-500' : 'bg-secondary'
+                  <button
+                    onClick={() => handleMealToggle('breakfast', !todayData.log?.breakfastDone)}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 ${
+                      todayData.log?.breakfastDone
+                        ? 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30'
+                        : 'bg-slate-300 dark:bg-zinc-600'
                     }`}
-                  />
+                  >
+                    <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
+                      todayData.log?.breakfastDone ? 'left-7' : 'left-1'
+                    }`}>
+                      {todayData.log?.breakfastDone ? (
+                        <CheckCircle2 className="w-4 h-4 text-amber-500" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-slate-400" />
+                      )}
+                    </div>
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -593,13 +689,24 @@ export default function DietPage() {
                       <p className="font-medium">{todayData.plan.lunch}</p>
                     </div>
                   </div>
-                  <Toggle
-                    pressed={todayData.log?.lunchDone}
-                    onPressedChange={(pressed) => handleMealToggle('lunch', pressed)}
-                    className={`w-12 h-7 rounded-full ${
-                      todayData.log?.lunchDone ? 'bg-orange-500' : 'bg-secondary'
+                  <button
+                    onClick={() => handleMealToggle('lunch', !todayData.log?.lunchDone)}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 ${
+                      todayData.log?.lunchDone
+                        ? 'bg-gradient-to-r from-orange-400 to-red-500 shadow-lg shadow-orange-500/30'
+                        : 'bg-slate-300 dark:bg-zinc-600'
                     }`}
-                  />
+                  >
+                    <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
+                      todayData.log?.lunchDone ? 'left-7' : 'left-1'
+                    }`}>
+                      {todayData.log?.lunchDone ? (
+                        <CheckCircle2 className="w-4 h-4 text-orange-500" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-slate-400" />
+                      )}
+                    </div>
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -623,13 +730,24 @@ export default function DietPage() {
                       <p className="font-medium">{todayData.plan.snack}</p>
                     </div>
                   </div>
-                  <Toggle
-                    pressed={todayData.log?.snackDone}
-                    onPressedChange={(pressed) => handleMealToggle('snack', pressed)}
-                    className={`w-12 h-7 rounded-full ${
-                      todayData.log?.snackDone ? 'bg-lime-500' : 'bg-secondary'
+                  <button
+                    onClick={() => handleMealToggle('snack', !todayData.log?.snackDone)}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 ${
+                      todayData.log?.snackDone
+                        ? 'bg-gradient-to-r from-lime-400 to-green-500 shadow-lg shadow-lime-500/30'
+                        : 'bg-slate-300 dark:bg-zinc-600'
                     }`}
-                  />
+                  >
+                    <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
+                      todayData.log?.snackDone ? 'left-7' : 'left-1'
+                    }`}>
+                      {todayData.log?.snackDone ? (
+                        <CheckCircle2 className="w-4 h-4 text-lime-500" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-slate-400" />
+                      )}
+                    </div>
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -653,13 +771,24 @@ export default function DietPage() {
                       <p className="font-medium">{todayData.plan.dinner}</p>
                     </div>
                   </div>
-                  <Toggle
-                    pressed={todayData.log?.dinnerDone}
-                    onPressedChange={(pressed) => handleMealToggle('dinner', pressed)}
-                    className={`w-12 h-7 rounded-full ${
-                      todayData.log?.dinnerDone ? 'bg-purple-500' : 'bg-secondary'
+                  <button
+                    onClick={() => handleMealToggle('dinner', !todayData.log?.dinnerDone)}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 ${
+                      todayData.log?.dinnerDone
+                        ? 'bg-gradient-to-r from-purple-400 to-violet-500 shadow-lg shadow-purple-500/30'
+                        : 'bg-slate-300 dark:bg-zinc-600'
                     }`}
-                  />
+                  >
+                    <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
+                      todayData.log?.dinnerDone ? 'left-7' : 'left-1'
+                    }`}>
+                      {todayData.log?.dinnerDone ? (
+                        <CheckCircle2 className="w-4 h-4 text-purple-500" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-slate-400" />
+                      )}
+                    </div>
+                  </button>
                 </div>
               </CardContent>
             </Card>
