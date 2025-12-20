@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Flame, Utensils, Timer, Wine, Wheat, Candy, CheckCircle2, XCircle, ChevronRight, Sparkles } from 'lucide-react'
+import { Flame, Utensils, Timer, Wine, Wheat, Candy, CheckCircle2, XCircle, ChevronRight, Sparkles, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 interface DietData {
   config: {
@@ -62,6 +64,12 @@ export function DietStatusCard() {
   const [dietData, setDietData] = useState<DietData | null>(null)
   const [weeklyLogs, setWeeklyLogs] = useState<WeeklyLog[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+  const [localRules, setLocalRules] = useState({
+    noAlcohol: true,
+    noFlour: true,
+    noSugar: true,
+  })
 
   useEffect(() => {
     const loadDietData = async () => {
@@ -94,6 +102,67 @@ export function DietStatusCard() {
 
     loadDietData()
   }, [])
+
+  // dietData에서 localRules 동기화
+  useEffect(() => {
+    if (dietData?.log) {
+      setLocalRules({
+        noAlcohol: dietData.log.noAlcohol !== false,
+        noFlour: dietData.log.noFlour !== false,
+        noSugar: dietData.log.noSugar !== false,
+      })
+    }
+  }, [dietData?.log])
+
+  // 토글 핸들러
+  const handleToggle = async (key: 'noAlcohol' | 'noFlour' | 'noSugar', e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const newValue = !localRules[key]
+    setLocalRules(prev => ({ ...prev, [key]: newValue }))
+
+    try {
+      await fetch('/api/diet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'update-log',
+          [key]: newValue,
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to update:', error)
+      // 실패 시 롤백
+      setLocalRules(prev => ({ ...prev, [key]: !newValue }))
+    }
+  }
+
+  // 재설정 핸들러
+  const handleReset = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const resetState = {
+      noAlcohol: true,
+      noFlour: true,
+      noSugar: true,
+    }
+    setLocalRules(resetState)
+
+    try {
+      await fetch('/api/diet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'reset-log',
+        }),
+      })
+      setResetDialogOpen(false)
+    } catch (error) {
+      console.error('Failed to reset:', error)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -185,11 +254,11 @@ export function DietStatusCard() {
   const motivationalMessage = getMessage()
   const isFastingDay = dietData.plan?.isFastingDay
 
-  // 금기사항 상태
+  // 금기사항 상태 (localRules 사용)
   const rules = [
-    { key: 'noAlcohol', label: '금주', icon: Wine, done: dietData.log?.noAlcohol !== false },
-    { key: 'noFlour', label: '밀가루', icon: Wheat, done: dietData.log?.noFlour !== false },
-    { key: 'noSugar', label: '설탕', icon: Candy, done: dietData.log?.noSugar !== false },
+    { key: 'noAlcohol' as const, label: '금주', icon: Wine, done: localRules.noAlcohol },
+    { key: 'noFlour' as const, label: '밀가루', icon: Wheat, done: localRules.noFlour },
+    { key: 'noSugar' as const, label: '설탕', icon: Candy, done: localRules.noSugar },
   ]
 
   return (
@@ -266,25 +335,40 @@ export function DietStatusCard() {
             </div>
           </div>
 
-          {/* 금기사항 체크 */}
+          {/* 금기사항 토글 버튼 */}
           <div className="flex items-center gap-2 mb-4">
             {rules.map((rule) => (
-              <div
+              <button
                 key={rule.key}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                onClick={(e) => handleToggle(rule.key, e)}
+                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${
                   rule.done
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                    : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                    ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/30 scale-100'
+                    : 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30 scale-95 opacity-80'
                 }`}
               >
-                <rule.icon className="w-3.5 h-3.5" />
+                <rule.icon className="w-4 h-4" />
                 <span>{rule.label}</span>
-                {rule.done ? (
-                  <CheckCircle2 className="w-3 h-3" />
-                ) : (
-                  <XCircle className="w-3 h-3" />
-                )}
-              </div>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                  rule.done
+                    ? 'bg-white/30'
+                    : 'bg-white/20'
+                }`}>
+                  {rule.done ? (
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  ) : (
+                    <XCircle className="w-3.5 h-3.5" />
+                  )}
+                </div>
+                {/* ON/OFF 표시 */}
+                <span className={`absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full text-[8px] font-black ${
+                  rule.done
+                    ? 'bg-emerald-300 text-emerald-800'
+                    : 'bg-red-300 text-red-800'
+                }`}>
+                  {rule.done ? 'OK' : 'X'}
+                </span>
+              </button>
             ))}
           </div>
 
@@ -302,13 +386,61 @@ export function DietStatusCard() {
             </div>
           </div>
 
-          {/* 동기부여 메시지 */}
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-r from-orange-100/80 to-amber-100/80 dark:from-orange-900/20 dark:to-amber-900/20">
-            <span className="text-xl">{motivationalMessage.emoji}</span>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-1">
-              {motivationalMessage.message}
-            </p>
-            <Sparkles className="w-4 h-4 text-orange-500 dark:text-orange-400 opacity-60" />
+          {/* 동기부여 메시지 + 재설정 버튼 */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-r from-orange-100/80 to-amber-100/80 dark:from-orange-900/20 dark:to-amber-900/20 flex-1">
+              <span className="text-xl">{motivationalMessage.emoji}</span>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-1">
+                {motivationalMessage.message}
+              </p>
+              <Sparkles className="w-4 h-4 text-orange-500 dark:text-orange-400 opacity-60" />
+            </div>
+
+            {/* 재설정 버튼 */}
+            <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+              <DialogTrigger asChild>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setResetDialogOpen(true)
+                  }}
+                  className="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-200 transition-all"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-xs" onClick={(e) => e.stopPropagation()}>
+                <DialogHeader>
+                  <DialogTitle className="text-lg">식단 기록 초기화</DialogTitle>
+                </DialogHeader>
+                <div className="pt-4 space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    오늘의 식단 기록이 모두 초기화됩니다. 계속하시겠습니까?
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setResetDialogOpen(false)
+                      }}
+                    >
+                      취소
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={handleReset}
+                    >
+                      초기화
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
