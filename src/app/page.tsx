@@ -4,15 +4,15 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
-import { Toggle } from '@/components/ui/toggle'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useAppStore, PROTEIN_FOODS, WORKOUT_ROUTINE, PHASES, DailyLog } from '@/stores/useAppStore'
 import { useGamificationStore } from '@/stores/useGamificationStore'
 import { differenceInDays, format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { Droplets, Utensils, Moon, Dumbbell, Trophy, Flame, Target, Activity, Zap, RotateCcw, Settings, Brain, Quote } from 'lucide-react'
+import { Droplets, Utensils, Dumbbell, Trophy, Flame, Target, Activity, Zap, RotateCcw, Settings, Brain, Quote } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { DietStatusCard } from '@/components/DietStatusCard'
 import {
   XPBar,
   XPGainAnimation,
@@ -56,6 +56,37 @@ export default function Dashboard() {
   const [totalWorkouts, setTotalWorkouts] = useState(0)
   const [perfectDays, setPerfectDays] = useState(0)
   const [thielQuote, setThielQuote] = useState('')
+  const [waterCount, setWaterCount] = useState(0)
+
+  // 물 섭취량 로드 (localStorage에서)
+  useEffect(() => {
+    const today = format(new Date(), 'yyyy-MM-dd')
+    const savedWaterData = localStorage.getItem('waterCount')
+    if (savedWaterData) {
+      const { date, count } = JSON.parse(savedWaterData)
+      if (date === today) {
+        setWaterCount(count)
+      } else {
+        // 새 날짜면 초기화
+        localStorage.setItem('waterCount', JSON.stringify({ date: today, count: 0 }))
+      }
+    }
+  }, [])
+
+  // todayLog가 로드되면 waterDone 상태와 동기화
+  useEffect(() => {
+    if (todayLog?.waterDone) {
+      // 이미 완료 상태면 6으로 설정
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const savedWaterData = localStorage.getItem('waterCount')
+      if (savedWaterData) {
+        const { date, count } = JSON.parse(savedWaterData)
+        if (date === today && count >= 6) return // 이미 동기화됨
+      }
+      setWaterCount(6)
+      localStorage.setItem('waterCount', JSON.stringify({ date: today, count: 6 }))
+    }
+  }, [todayLog?.waterDone])
 
   // 피터 틸 명언 설정 (하루에 한 번만 변경)
   useEffect(() => {
@@ -255,6 +286,21 @@ export default function Dashboard() {
     handleUpdateLog({ proteinAmount: newAmount })
   }
 
+  const handleWaterClick = async () => {
+    if (waterCount >= 6) return // 이미 완료
+
+    const newCount = waterCount + 1
+    setWaterCount(newCount)
+
+    const today = format(new Date(), 'yyyy-MM-dd')
+    localStorage.setItem('waterCount', JSON.stringify({ date: today, count: newCount }))
+
+    // 6번째 클릭 시 waterDone: true로 저장
+    if (newCount >= 6) {
+      await handleUpdateLog({ waterDone: true })
+    }
+  }
+
 const handleWorkoutToggle = async () => {
     const newState = !todayLog?.workoutDone
     if (newState) {
@@ -399,6 +445,10 @@ const handleWorkoutToggle = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...todayLog, ...resetData }),
     })
+    // 물 섭취량도 초기화
+    setWaterCount(0)
+    const today = format(new Date(), 'yyyy-MM-dd')
+    localStorage.setItem('waterCount', JSON.stringify({ date: today, count: 0 }))
     setResetDialogOpen(false)
   }
 
@@ -435,9 +485,8 @@ const handleWorkoutToggle = async () => {
 
   // 퀘스트 완료 개수
   const questsCompleted = [
-    todayLog?.waterDone,
+    waterCount >= 6,
     (todayLog?.proteinAmount || 0) >= proteinGoal,
-    todayLog?.cleanDiet,
     todayLog?.workoutDone,
   ].filter(Boolean).length
 
@@ -596,6 +645,11 @@ const handleWorkoutToggle = async () => {
         />
       </div>
 
+      {/* 스위치온 다이어트 상태 카드 */}
+      <div className="opacity-0 animate-fade-in-up animation-delay-175">
+        <DietStatusCard />
+      </div>
+
       {/* 연속 달성 스트릭 (강화된 버전) */}
       <div className="opacity-0 animate-fade-in-up animation-delay-100">
         <StreakCard
@@ -615,7 +669,7 @@ const handleWorkoutToggle = async () => {
             </div>
             <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary">
               <Flame className="w-4 h-4" />
-              <span className="text-sm font-semibold">{questsCompleted}/4</span>
+              <span className="text-sm font-semibold">{questsCompleted}/3</span>
             </div>
           </div>
 
@@ -712,26 +766,59 @@ const handleWorkoutToggle = async () => {
         </div>
         <div className="space-y-2">
           {/* 물 3L */}
-          <Card className="border-0 bg-card/50 touch-scale">
+          <Card className={`border-0 touch-scale transition-all duration-500 ${
+            waterCount >= 6
+              ? 'bg-gradient-to-br from-cyan-500/20 via-blue-500/15 to-sky-500/20 ring-2 ring-cyan-400/50'
+              : 'bg-card/50'
+          }`}>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${todayLog?.waterDone ? 'bg-[#00d4ff]/20' : 'bg-secondary'}`}>
-                    <Droplets className={`w-5 h-5 ${todayLog?.waterDone ? 'text-[#00d4ff]' : 'text-muted-foreground'}`} />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                    waterCount >= 6 ? 'bg-cyan-500/30' : 'bg-secondary'
+                  }`}>
+                    <Droplets className={`w-5 h-5 transition-all ${
+                      waterCount >= 6 ? 'text-cyan-500' : 'text-muted-foreground'
+                    }`} />
                   </div>
                   <div>
-                    <p className="font-medium">물 3L 마시기</p>
-                    <p className="text-xs text-muted-foreground">{QUEST_COGNITIVE_LABELS.water.subtitle}</p>
+                    <p className={`font-medium transition-all ${waterCount >= 6 ? 'text-cyan-600 dark:text-cyan-400' : ''}`}>
+                      물 3L 마시기
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {waterCount >= 6 ? '오늘의 목표 달성! 💧' : `${waterCount * 500}ml / 3,000ml`}
+                    </p>
                   </div>
                 </div>
-                <Toggle
-                  pressed={todayLog?.waterDone}
-                  onPressedChange={(pressed) => handleUpdateLog({ waterDone: pressed })}
-                  className={`w-14 h-8 rounded-full toggle-animated relative overflow-hidden ${todayLog?.waterDone ? 'bg-[#00d4ff] data-[state=on]:bg-[#00d4ff]' : 'bg-secondary'}`}
+                <Button
+                  onClick={handleWaterClick}
+                  disabled={waterCount >= 6}
+                  size="sm"
+                  className={`h-9 px-4 font-semibold transition-all ${
+                    waterCount >= 6
+                      ? 'bg-cyan-500 text-white cursor-default'
+                      : 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-600 dark:text-cyan-400'
+                  }`}
                 >
-                  <span className="sr-only">물 완료</span>
-                </Toggle>
+                  {waterCount >= 6 ? '💧 완료!' : '💧 +500ml'}
+                </Button>
               </div>
+              {/* 6칸 진행 표시 */}
+              <div className="grid grid-cols-6 gap-1.5">
+                {[...Array(6)].map((_, index) => (
+                  <div
+                    key={index}
+                    className={`h-3 rounded-full transition-all duration-300 ${
+                      index < waterCount
+                        ? 'bg-gradient-to-r from-cyan-400 to-blue-500 shadow-sm shadow-cyan-400/30'
+                        : 'bg-slate-200 dark:bg-zinc-700'
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-[10px] text-center text-muted-foreground mt-2">
+                {waterCount >= 6 ? '🎉 완벽해요!' : `${6 - waterCount}번 더 마시면 완료`}
+              </p>
             </CardContent>
           </Card>
 
@@ -788,29 +875,6 @@ const handleWorkoutToggle = async () => {
             </CardContent>
           </Card>
 
-          {/* 야식 금지 */}
-          <Card className="border-0 bg-card/50 touch-scale">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${todayLog?.cleanDiet ? 'bg-[#a855f7]/20' : 'bg-secondary'}`}>
-                    <Moon className={`w-5 h-5 ${todayLog?.cleanDiet ? 'text-[#a855f7]' : 'text-muted-foreground'}`} />
-                  </div>
-                  <div>
-                    <p className="font-medium">클린 다이어트</p>
-                    <p className="text-xs text-muted-foreground">{QUEST_COGNITIVE_LABELS.cleanDiet.subtitle}</p>
-                  </div>
-                </div>
-                <Toggle
-                  pressed={todayLog?.cleanDiet}
-                  onPressedChange={(pressed) => handleUpdateLog({ cleanDiet: pressed })}
-                  className={`w-14 h-8 rounded-full toggle-animated relative overflow-hidden ${todayLog?.cleanDiet ? 'bg-[#a855f7] data-[state=on]:bg-[#a855f7]' : 'bg-secondary'}`}
-                >
-                  <span className="sr-only">클린식 완료</span>
-                </Toggle>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
