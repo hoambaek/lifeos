@@ -238,15 +238,15 @@ export default function LogPage() {
           />
           <div className="flex justify-center gap-4 mt-4 text-sm">
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <div className="w-3 h-3 rounded-sm bg-green-500" />
               <span>3개 이상 달성</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-yellow-500" />
+              <div className="w-3 h-3 rounded-sm bg-yellow-500" />
               <span>1-2개 달성</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <div className="w-3 h-3 rounded-sm bg-red-500" />
               <span>미달성</span>
             </div>
           </div>
