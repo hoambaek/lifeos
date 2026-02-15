@@ -21,7 +21,7 @@ import { TrendingDown, Target, Flame, Activity, Zap, Droplets } from 'lucide-rea
 
 // 스켈레톤 컴포넌트
 const SkeletonBox = ({ className }: { className?: string }) => (
-  <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+  <div className={`animate-pulse bg-stone-200 dark:bg-stone-800 rounded-lg ${className}`} />
 )
 
 const SkeletonCard = ({ className }: { className?: string }) => (
@@ -257,13 +257,22 @@ export default function StatsPage() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="px-6 py-8 space-y-8 pb-24">
+      {/* 페이지 헤더 */}
+      <div>
+        <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-200">
+          통계
+        </h1>
+        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">체중과 체성분 변화를 분석합니다</p>
+        <hr className="editorial-rule mt-4" />
+      </div>
+
       {/* 체중 변화 그래프 */}
-      <Card>
+      <Card className="border-stone-200 dark:border-stone-800">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingDown className="w-5 h-5" />
+            <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
+              <TrendingDown className="w-4 h-4 text-stone-500" />
               체중 변화
             </CardTitle>
             <div className="flex gap-1">
@@ -300,9 +309,9 @@ export default function StatsPage() {
                     <Line
                       type="monotone"
                       dataKey="weight"
-                      stroke="#2563eb"
+                      stroke="#92400E"
                       strokeWidth={2}
-                      dot={{ fill: '#2563eb' }}
+                      dot={{ fill: '#92400E' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -326,10 +335,10 @@ export default function StatsPage() {
 
       {/* 인바디 지표 변화 그래프 */}
       {inbodyChartData.length > 0 && (
-        <Card>
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Activity className="w-5 h-5" />
+            <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
+              <Activity className="w-4 h-4 text-stone-500" />
               인바디 지표 변화
             </CardTitle>
           </CardHeader>
@@ -339,31 +348,32 @@ export default function StatsPage() {
                 <div className="h-56 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={inbodyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                      <XAxis dataKey="date" fontSize={12} stroke="#888" />
-                      <YAxis fontSize={12} stroke="#888" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#D6D3D1" />
+                      <XAxis dataKey="date" fontSize={12} stroke="#78716C" />
+                      <YAxis fontSize={12} stroke="#78716C" />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#1a1a1e',
-                          border: '1px solid #333',
+                          backgroundColor: '#FAF9F7',
+                          border: '1px solid #D6D3D1',
                           borderRadius: '8px',
+                          fontFamily: 'var(--font-serif)',
                         }}
                       />
                       <Legend />
                       <Line
                         type="monotone"
                         dataKey="muscle"
-                        stroke="#22c55e"
+                        stroke="#166534"
                         strokeWidth={2}
-                        dot={{ fill: '#22c55e' }}
+                        dot={{ fill: '#166534' }}
                         name="골격근량 (kg)"
                       />
                       <Line
                         type="monotone"
                         dataKey="fat"
-                        stroke="#ef4444"
+                        stroke="#B45309"
                         strokeWidth={2}
-                        dot={{ fill: '#ef4444' }}
+                        dot={{ fill: '#B45309' }}
                         name="체지방량 (kg)"
                       />
                     </LineChart>
@@ -417,10 +427,10 @@ export default function StatsPage() {
 
       {/* 인바디 점수 추이 */}
       {inbodyChartData.length > 1 && (
-        <Card>
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingDown className="w-5 h-5" />
+            <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
+              <TrendingDown className="w-4 h-4 text-stone-500" />
               인바디 점수 추이
             </CardTitle>
           </CardHeader>
@@ -428,23 +438,24 @@ export default function StatsPage() {
             <div className="h-40 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={inbodyChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis dataKey="date" fontSize={12} stroke="#888" />
-                  <YAxis domain={[0, 100]} fontSize={12} stroke="#888" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#D6D3D1" />
+                  <XAxis dataKey="date" fontSize={12} stroke="#78716C" />
+                  <YAxis domain={[0, 100]} fontSize={12} stroke="#78716C" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#1a1a1e',
-                      border: '1px solid #333',
+                      backgroundColor: '#FAF9F7',
+                      border: '1px solid #D6D3D1',
                       borderRadius: '8px',
+                      fontFamily: 'var(--font-serif)',
                     }}
                     formatter={(value: number) => [`${value}점`, '인바디 점수']}
                   />
                   <Line
                     type="monotone"
                     dataKey="score"
-                    stroke="#8b5cf6"
+                    stroke="#92400E"
                     strokeWidth={3}
-                    dot={{ fill: '#8b5cf6', strokeWidth: 2 }}
+                    dot={{ fill: '#92400E', strokeWidth: 2 }}
                     name="인바디 점수"
                   />
                 </LineChart>
@@ -467,10 +478,10 @@ export default function StatsPage() {
       )}
 
       {/* 이번 주 습관 달성률 */}
-      <Card>
+      <Card className="border-stone-200 dark:border-stone-800">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Flame className="w-5 h-5" />
+          <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
+            <Flame className="w-4 h-4 text-stone-500" />
             이번 주 습관 달성률
           </CardTitle>
         </CardHeader>
@@ -508,10 +519,10 @@ export default function StatsPage() {
 
       {/* 목표 달성 현황 */}
       {config && (
-        <Card>
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Target className="w-5 h-5" />
+            <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
+              <Target className="w-4 h-4 text-stone-500" />
               목표 달성 현황
             </CardTitle>
           </CardHeader>

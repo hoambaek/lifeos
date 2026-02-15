@@ -36,7 +36,7 @@ import {
 
 // 스켈레톤 컴포넌트
 const SkeletonBox = ({ className }: { className?: string }) => (
-  <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+  <div className={`animate-pulse bg-stone-200 dark:bg-stone-800 rounded-lg ${className}`} />
 )
 
 interface InBodyRecord {
@@ -352,13 +352,13 @@ export default function InBodyPage() {
         </div>
 
         {/* 인바디 점수 스켈레톤 */}
-        <Card className="bg-gradient-to-br from-blue-500 to-purple-600">
+        <Card className="bg-stone-900 dark:bg-stone-100 border-0">
           <CardContent className="pt-6">
             <div className="text-center space-y-2">
-              <SkeletonBox className="h-4 w-20 mx-auto bg-white/20" />
-              <SkeletonBox className="h-14 w-24 mx-auto bg-white/20" />
-              <SkeletonBox className="h-4 w-16 mx-auto bg-white/20" />
-              <SkeletonBox className="h-3 w-32 mx-auto bg-white/20 mt-2" />
+              <SkeletonBox className="h-4 w-20 mx-auto bg-stone-700 dark:bg-stone-300" />
+              <SkeletonBox className="h-14 w-24 mx-auto bg-stone-700 dark:bg-stone-300" />
+              <SkeletonBox className="h-4 w-16 mx-auto bg-stone-700 dark:bg-stone-300" />
+              <SkeletonBox className="h-3 w-32 mx-auto bg-stone-700 dark:bg-stone-300 mt-2" />
             </div>
           </CardContent>
         </Card>
@@ -401,10 +401,13 @@ export default function InBodyPage() {
   }
 
   return (
-    <div className="p-4 space-y-4 pb-20">
+    <div className="px-6 py-8 space-y-8 pb-24">
       {/* 헤더 */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">인바디 분석</h1>
+        <div>
+          <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-200">인바디 분석</h1>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">체성분 변화를 추적합니다</p>
+        </div>
         <Dialog open={isUploadOpen} onOpenChange={(open) => {
             setIsUploadOpen(open)
             if (!open) {
@@ -424,9 +427,9 @@ export default function InBodyPage() {
             </DialogHeader>
             <div className="space-y-4 pt-4">
               {/* AI 이미지 분석 */}
-              <div className="p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg border border-purple-500/20">
+              <div className="p-4 bg-stone-50 dark:bg-stone-900/50 rounded-lg border border-stone-200 dark:border-stone-700">
                 <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-purple-500" />
+                  <Sparkles className="w-4 h-4 text-stone-500" />
                   <span className="text-sm font-medium">AI 자동 분석</span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">
@@ -608,15 +611,17 @@ export default function InBodyPage() {
         </Dialog>
       </div>
 
+      <hr className="editorial-rule" />
+
       {/* 최신 인바디 점수 */}
       {latestRecord && (
-        <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+        <Card className="bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 border-0">
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm opacity-80">인바디 점수</p>
-              <p className="text-5xl font-bold my-2">{latestRecord.inbodyScore}</p>
-              <p className="text-sm opacity-80">/ 100점</p>
-              <p className="text-xs mt-2 opacity-70">
+              <p className="editorial-label text-stone-400 dark:text-stone-500">인바디 점수</p>
+              <p className="text-5xl font-serif font-bold my-2">{latestRecord.inbodyScore}</p>
+              <p className="text-sm opacity-60">/ 100점</p>
+              <p className="text-xs mt-2 opacity-50">
                 {format(new Date(latestRecord.date), 'yyyy년 M월 d일', { locale: ko })} 측정
               </p>
             </div>
@@ -627,40 +632,40 @@ export default function InBodyPage() {
       {/* 주요 지표 */}
       {latestRecord && (
         <div className="grid grid-cols-2 gap-3">
-          <Card>
+          <Card className="border-stone-200 dark:border-stone-800">
             <CardContent className="pt-4">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Activity className="w-4 h-4" />
+              <div className="editorial-label flex items-center gap-1">
+                <Activity className="w-3 h-3" />
                 체중
               </div>
-              <p className="text-2xl font-bold mt-1">{latestRecord.weight}kg</p>
+              <p className="text-2xl font-mono font-bold mt-1 text-stone-800 dark:text-stone-200">{latestRecord.weight}kg</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-stone-200 dark:border-stone-800">
             <CardContent className="pt-4">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Zap className="w-4 h-4" />
+              <div className="editorial-label flex items-center gap-1">
+                <Zap className="w-3 h-3" />
                 골격근량
               </div>
-              <p className="text-2xl font-bold mt-1">{latestRecord.skeletalMuscle}kg</p>
+              <p className="text-2xl font-mono font-bold mt-1 text-stone-800 dark:text-stone-200">{latestRecord.skeletalMuscle}kg</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-stone-200 dark:border-stone-800">
             <CardContent className="pt-4">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Droplets className="w-4 h-4" />
+              <div className="editorial-label flex items-center gap-1">
+                <Droplets className="w-3 h-3" />
                 체지방량
               </div>
-              <p className="text-2xl font-bold mt-1">{latestRecord.bodyFatMass}kg</p>
+              <p className="text-2xl font-mono font-bold mt-1 text-stone-800 dark:text-stone-200">{latestRecord.bodyFatMass}kg</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-stone-200 dark:border-stone-800">
             <CardContent className="pt-4">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Target className="w-4 h-4" />
+              <div className="editorial-label flex items-center gap-1">
+                <Target className="w-3 h-3" />
                 체지방률
               </div>
-              <p className="text-2xl font-bold mt-1">{latestRecord.bodyFatPercent}%</p>
+              <p className="text-2xl font-mono font-bold mt-1 text-stone-800 dark:text-stone-200">{latestRecord.bodyFatPercent}%</p>
             </CardContent>
           </Card>
         </div>
@@ -668,9 +673,9 @@ export default function InBodyPage() {
 
       {/* AI 분석 결과 */}
       {aiAnalysis && (
-        <Card>
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">AI 코칭</CardTitle>
+            <CardTitle className="text-base font-serif text-stone-800 dark:text-stone-200">AI 코칭</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">{aiAnalysis.summary}</p>
@@ -716,9 +721,9 @@ export default function InBodyPage() {
 
       {/* 변화 추이 그래프 */}
       {chartData.length > 1 && (
-        <Card>
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">변화 추이</CardTitle>
+            <CardTitle className="text-base font-serif text-stone-800 dark:text-stone-200">변화 추이</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-48">
@@ -769,9 +774,9 @@ export default function InBodyPage() {
 
       {/* 측정 기록 목록 */}
       {records.length > 0 && (
-        <Card>
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">측정 기록</CardTitle>
+            <CardTitle className="text-base font-serif text-stone-800 dark:text-stone-200">측정 기록</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -800,7 +805,7 @@ export default function InBodyPage() {
 
       {/* 데이터 없을 때 */}
       {!latestRecord && (
-        <Card>
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardContent className="py-12 text-center">
             <Activity className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">아직 인바디 측정 기록이 없습니다</p>

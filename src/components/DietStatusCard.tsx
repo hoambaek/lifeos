@@ -97,24 +97,23 @@ export function DietStatusCard() {
 
   if (isLoading) {
     return (
-      <div className="diet-card-skeleton animate-pulse rounded-2xl h-48 bg-gradient-to-br from-orange-100 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20" />
+      <div className="diet-card-skeleton animate-pulse rounded-xl h-48 bg-stone-100 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700" />
     )
   }
 
   if (!dietData?.config) {
     return (
       <Link href="/diet" className="block">
-        <div className="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-orange-500/10 via-red-500/5 to-amber-500/10 border border-orange-500/20 hover:border-orange-500/40 transition-all group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/20 to-transparent rounded-bl-full" />
+        <div className="relative overflow-hidden rounded-xl p-5 bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 hover:border-stone-400 dark:hover:border-stone-600 transition-all group">
           <div className="relative z-10 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-              <Flame className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 rounded-xl bg-stone-900 dark:bg-stone-100 flex items-center justify-center">
+              <Flame className="w-6 h-6 text-stone-50 dark:text-stone-900" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-lg text-slate-800 dark:text-white">스위치온 다이어트</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">4주 프로그램을 시작해보세요</p>
+              <h3 className="font-serif font-semibold text-lg text-stone-800 dark:text-stone-200">스위치온 다이어트</h3>
+              <p className="text-sm text-stone-500 dark:text-stone-400">4주 프로그램을 시작해보세요</p>
             </div>
-            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
+            <ChevronRight className="w-5 h-5 text-stone-400 group-hover:text-stone-700 dark:group-hover:text-stone-200 group-hover:translate-x-1 transition-all" />
           </div>
         </div>
       </Link>
@@ -194,75 +193,37 @@ export function DietStatusCard() {
 
   return (
     <Link href="/diet" className="block">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-orange-950/40 dark:via-amber-950/30 dark:to-yellow-950/20 border border-orange-200/50 dark:border-orange-800/30 hover:border-orange-400/50 dark:hover:border-orange-600/50 transition-all group">
-        {/* 배경 장식 */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-bl from-orange-400/20 to-transparent rounded-full blur-2xl" />
-        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-red-400/15 to-transparent rounded-full blur-xl" />
-
+      <div className="relative overflow-hidden rounded-xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200 dark:border-stone-800 hover:border-stone-400 dark:hover:border-stone-600 transition-all group">
         {/* 메인 콘텐츠 */}
         <div className="relative z-10 p-5">
           {/* 헤더 */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
-                isFastingDay
-                  ? 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/30'
-                  : 'bg-gradient-to-br from-orange-500 to-red-500 shadow-orange-500/30'
-              }`}>
+              <div className="w-10 h-10 rounded-lg bg-stone-900 dark:bg-stone-100 flex items-center justify-center">
                 {isFastingDay ? (
-                  <Timer className="w-6 h-6 text-white" />
+                  <Timer className="w-5 h-5 text-stone-50 dark:text-stone-900" />
                 ) : (
-                  <Utensils className="w-6 h-6 text-white" />
+                  <Utensils className="w-5 h-5 text-stone-50 dark:text-stone-900" />
                 )}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-800 dark:text-white">
+                  <h3 className="font-serif font-semibold text-stone-800 dark:text-stone-200">
                     {isFastingDay ? '단식일' : '식단 관리'}
                   </h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/20 text-orange-600 dark:text-orange-400">
+                  <span className="editorial-label">
                     {dietData.week}주차
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   D+{dietData.dayNumber} · {WEEK_PHASE_NAMES[dietData.week] || '진행중'}
                 </p>
               </div>
             </div>
 
-            {/* 오늘 진행률 링 */}
-            <div className="relative w-14 h-14">
-              <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-                <circle
-                  cx="28"
-                  cy="28"
-                  r="24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  className="text-orange-200 dark:text-orange-900/50"
-                />
-                <circle
-                  cx="28"
-                  cy="28"
-                  r="24"
-                  fill="none"
-                  stroke="url(#progressGradient)"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeDasharray={`${todayProgress * 1.508} 150.8`}
-                  className="transition-all duration-700 ease-out"
-                />
-                <defs>
-                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#f97316" />
-                    <stop offset="100%" stopColor="#ef4444" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{todayProgress}%</span>
-              </div>
+            {/* 오늘 진행률 */}
+            <div className="text-right">
+              <span className="text-2xl font-mono font-bold text-stone-800 dark:text-stone-200">{todayProgress}%</span>
             </div>
           </div>
 
@@ -271,10 +232,10 @@ export function DietStatusCard() {
             {rules.map((rule) => (
               <div
                 key={rule.key}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
                   rule.done
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                    : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                    ? 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300'
+                    : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
                 }`}
               >
                 <rule.icon className="w-3.5 h-3.5" />
@@ -291,29 +252,25 @@ export function DietStatusCard() {
           {/* 주간 진행률 바 */}
           <div className="mb-3">
             <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="text-slate-500 dark:text-slate-400">이번 주 진행률</span>
-              <span className="font-semibold text-orange-600 dark:text-orange-400">{weekProgress}%</span>
+              <span className="text-stone-500 dark:text-stone-400">이번 주 진행률</span>
+              <span className="font-mono font-semibold text-stone-700 dark:text-stone-300">{weekProgress}%</span>
             </div>
-            <div className="h-2 rounded-full bg-orange-100 dark:bg-orange-900/30 overflow-hidden">
+            <div className="h-1.5 rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-700"
+                className="h-full rounded-full bg-stone-700 dark:bg-stone-300 transition-all duration-700"
                 style={{ width: `${weekProgress}%` }}
               />
             </div>
           </div>
 
           {/* 동기부여 메시지 */}
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-r from-orange-100/80 to-amber-100/80 dark:from-orange-900/20 dark:to-amber-900/20">
-            <span className="text-xl">{motivationalMessage.emoji}</span>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-1">
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-stone-100 dark:bg-stone-800/50 border-t border-stone-200 dark:border-stone-700">
+            <span className="text-base">{motivationalMessage.emoji}</span>
+            <p className="text-sm text-stone-600 dark:text-stone-400 flex-1">
               {motivationalMessage.message}
             </p>
-            <Sparkles className="w-4 h-4 text-orange-500 dark:text-orange-400 opacity-60" />
           </div>
         </div>
-
-        {/* 호버 효과 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 to-red-500/0 group-hover:from-orange-500/5 group-hover:to-red-500/5 transition-all duration-300" />
       </div>
     </Link>
   )

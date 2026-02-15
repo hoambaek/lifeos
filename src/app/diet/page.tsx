@@ -15,7 +15,7 @@ import {
 
 // 스켈레톤 컴포넌트
 const SkeletonBox = ({ className }: { className?: string }) => (
-  <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+  <div className={`animate-pulse bg-stone-200 dark:bg-stone-800 rounded-lg ${className}`} />
 )
 
 interface DietConfig {
@@ -328,7 +328,7 @@ export default function DietPage() {
         </div>
 
         {/* 날짜 선택 스켈레톤 */}
-        <Card className="border-0 bg-card/50">
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <SkeletonBox className="h-10 w-10 rounded-lg" />
@@ -355,7 +355,7 @@ export default function DietPage() {
         {/* 식사 카드 스켈레톤 */}
         <div className="space-y-2">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="border-0 bg-card/50">
+            <Card key={i} className="border-stone-200 dark:border-stone-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -377,7 +377,7 @@ export default function DietPage() {
           <SkeletonBox className="h-4 w-32" />
           <div className="grid grid-cols-3 gap-2">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-0 bg-card/50">
+              <Card key={i} className="border-stone-200 dark:border-stone-800">
                 <CardContent className="p-3 text-center">
                   <SkeletonBox className="w-6 h-6 mx-auto mb-1 rounded-lg" />
                   <SkeletonBox className="h-3 w-12 mx-auto mb-1" />
@@ -389,7 +389,7 @@ export default function DietPage() {
         </div>
 
         {/* 주차별 허용 식품 스켈레톤 */}
-        <Card className="border-0 bg-card/50">
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardContent className="p-4">
             <SkeletonBox className="h-4 w-36 mb-3" />
             <div className="flex flex-wrap gap-2">
@@ -406,34 +406,35 @@ export default function DietPage() {
   // 다이어트 시작 전
   if (!todayData || !todayData.plan) {
     return (
-      <div className="p-4 space-y-6">
-        <div className="pt-2 pb-4">
-          <h1 className="text-2xl font-bold">
-            <span className="gradient-text">스위치온 다이어트</span>
+      <div className="px-6 py-8 space-y-6 pb-24">
+        <div>
+          <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-200">
+            스위치온 다이어트
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
             신진대사 스위치를 켜서 지방을 태우는 4주 프로그램
           </p>
+          <hr className="editorial-rule mt-4" />
         </div>
 
-        <Card className="border-0 bg-gradient-to-br from-orange-500/20 to-red-500/10">
+        <Card className="border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/50">
           <CardContent className="p-6 text-center">
-            <Flame className="w-16 h-16 mx-auto mb-4 text-orange-400" />
-            <h2 className="text-xl font-bold mb-2">준비되셨나요?</h2>
+            <Flame className="w-16 h-16 mx-auto mb-4 text-amber-700 dark:text-amber-400" />
+            <h2 className="text-xl font-serif font-semibold mb-2 text-stone-800 dark:text-stone-200">준비되셨나요?</h2>
             <p className="text-muted-foreground text-sm mb-6">
               4주간의 체계적인 식단 관리로<br />
               건강한 체중 감량을 시작하세요
             </p>
             <Dialog open={isStartDialogOpen} onOpenChange={setIsStartDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="lg" className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
+                <Button size="lg" className="w-full h-14 text-lg font-semibold bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-stone-200">
                   <Play className="w-5 h-5 mr-2" />
                   다이어트 시작하기
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-sm glass-card border-0">
+              <DialogContent className="max-w-sm border-stone-200 dark:border-stone-800">
                 <DialogHeader>
-                  <DialogTitle className="text-xl font-bold gradient-text">시작일 설정</DialogTitle>
+                  <DialogTitle className="text-xl font-serif font-semibold text-stone-800 dark:text-stone-200">시작일 설정</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
                   <div>
@@ -461,7 +462,7 @@ export default function DietPage() {
             프로그램 안내
           </h3>
 
-          <Card className="border-0 bg-card/50">
+          <Card className="border-stone-200 dark:border-stone-800">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0">
@@ -475,7 +476,7 @@ export default function DietPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 bg-card/50">
+          <Card className="border-stone-200 dark:border-stone-800">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
@@ -489,7 +490,7 @@ export default function DietPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 bg-card/50">
+          <Card className="border-stone-200 dark:border-stone-800">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
@@ -503,7 +504,7 @@ export default function DietPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 bg-card/50">
+          <Card className="border-stone-200 dark:border-stone-800">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-lime-500/20 flex items-center justify-center flex-shrink-0">
@@ -545,18 +546,18 @@ export default function DietPage() {
   const progress = calculateProgress()
 
   return (
-    <div className="p-4 space-y-4 pb-24">
+    <div className="px-6 py-8 space-y-6 pb-24">
       {/* 헤더 */}
-      <div className="pt-2 pb-2">
+      <div>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">
-              <span className={weekTheme.color}>D+{todayData.dayNumber}</span>
-              <span className="text-muted-foreground text-sm font-normal ml-2">
+            <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-200">
+              D+{todayData.dayNumber}
+              <span className="text-stone-400 dark:text-stone-500 text-base font-normal ml-2">
                 {todayData.week}주차
               </span>
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
               {weekTheme.name}
             </p>
           </div>
@@ -564,20 +565,20 @@ export default function DietPage() {
             {/* 시작일 재설정 버튼 */}
             <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-orange-500">
+                <Button variant="ghost" size="icon" className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200">
                   <Settings className="w-5 h-5" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-sm glass-card border-0">
+              <DialogContent className="max-w-sm border-stone-200 dark:border-stone-800">
                 <DialogHeader>
-                  <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                    <RotateCcw className="w-5 h-5 text-orange-500" />
+                  <DialogTitle className="text-lg font-serif font-semibold flex items-center gap-2 text-stone-800 dark:text-stone-200">
+                    <RotateCcw className="w-5 h-5 text-stone-500" />
                     식단 시작일 재설정
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
-                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                  <div className="p-3 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
+                    <p className="text-sm text-stone-600 dark:text-stone-400">
                       현재 시작일: <span className="font-semibold">{todayData.config.startDate ? format(new Date(todayData.config.startDate), 'yyyy년 M월 d일') : '-'}</span>
                     </p>
                   </div>
@@ -603,7 +604,7 @@ export default function DietPage() {
                     </Button>
                     <Button
                       onClick={handleResetDiet}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                      className="flex-1 bg-stone-900 dark:bg-stone-100 text-stone-50 dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-stone-200"
                     >
                       변경하기
                     </Button>
@@ -615,13 +616,13 @@ export default function DietPage() {
             {/* 규칙 보기 버튼 */}
             <Dialog open={isRulesDialogOpen} onOpenChange={setIsRulesDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground">
+                <Button variant="ghost" size="icon" className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200">
                   <BookOpen className="w-5 h-5" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-sm glass-card border-0 max-h-[80vh] overflow-y-auto">
+              <DialogContent className="max-w-sm border-stone-200 dark:border-stone-800 max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle className="text-lg font-bold">📋 식단 규칙</DialogTitle>
+                  <DialogTitle className="text-lg font-serif font-semibold text-stone-800 dark:text-stone-200">식단 규칙</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3 pt-2">
                   {rules.map((rule) => (
@@ -640,8 +641,10 @@ export default function DietPage() {
         </div>
       </div>
 
+      <hr className="editorial-rule" />
+
       {/* 날짜 선택 */}
-      <Card className="border-0 bg-card/50">
+      <Card className="border-stone-200 dark:border-stone-800">
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <Button variant="ghost" size="icon" onClick={() => goToDate('prev')}>
@@ -670,25 +673,25 @@ export default function DietPage() {
       </Card>
 
       {/* 진행률 카드 */}
-      <Card className={`border-0 bg-gradient-to-br ${weekTheme.gradient}`}>
+      <Card className="border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/50">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               {todayData.plan.isFastingDay ? (
-                <Timer className={`w-5 h-5 ${weekTheme.color}`} />
+                <Timer className="w-5 h-5 text-stone-500" />
               ) : (
-                <Utensils className={`w-5 h-5 ${weekTheme.color}`} />
+                <Utensils className="w-5 h-5 text-stone-500" />
               )}
-              <span className="font-semibold">
+              <span className="font-serif font-semibold text-stone-800 dark:text-stone-200">
                 {todayData.plan.isFastingDay ? '24시간 단식일' : '오늘의 식단'}
               </span>
             </div>
-            <span className={`text-2xl font-bold ${weekTheme.color}`}>{progress}%</span>
+            <span className="text-2xl font-bold font-mono text-stone-800 dark:text-stone-200">{progress}%</span>
           </div>
-          <div className="relative h-2 rounded-full bg-black/20 overflow-hidden">
+          <div className="relative h-1.5 rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden">
             <div
               className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
-                progress === 100 ? 'bg-green-500' : 'bg-white/80'
+                progress === 100 ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-stone-700 dark:bg-stone-300'
               }`}
               style={{ width: `${progress}%` }}
             />
@@ -698,10 +701,10 @@ export default function DietPage() {
 
       {/* 단식일 UI */}
       {todayData.plan.isFastingDay ? (
-        <Card className="border-0 bg-card/50">
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardContent className="p-6 text-center">
-            <Timer className="w-16 h-16 mx-auto mb-4 text-amber-400" />
-            <h3 className="text-xl font-bold mb-2">24시간 단식</h3>
+            <Timer className="w-16 h-16 mx-auto mb-4 text-stone-400" />
+            <h3 className="text-xl font-serif font-semibold mb-2 text-stone-800 dark:text-stone-200">24시간 단식</h3>
             <p className="text-muted-foreground text-sm mb-6">
               오늘은 단식일입니다. 저녁 식사만 허용됩니다.
             </p>
@@ -742,7 +745,7 @@ export default function DietPage() {
                     className={`relative w-14 h-8 rounded-full transition-all duration-300 ${
                       todayData.log?.dinnerDone
                         ? 'bg-gradient-to-r from-purple-400 to-violet-500 shadow-lg shadow-purple-500/30'
-                        : 'bg-slate-300 dark:bg-zinc-600'
+                        : 'bg-stone-300 dark:bg-stone-600'
                     }`}
                   >
                     <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
@@ -751,7 +754,7 @@ export default function DietPage() {
                       {todayData.log?.dinnerDone ? (
                         <CheckCircle2 className="w-4 h-4 text-purple-500" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-slate-400" />
+                        <XCircle className="w-4 h-4 text-stone-400" />
                       )}
                     </div>
                   </button>
@@ -765,7 +768,7 @@ export default function DietPage() {
         <div className="space-y-2">
           {/* 아침 */}
           {todayData.plan.breakfast !== '-' && (
-            <Card className="border-0 bg-card/50">
+            <Card className="border-stone-200 dark:border-stone-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -786,7 +789,7 @@ export default function DietPage() {
                     className={`relative w-14 h-8 rounded-full transition-all duration-300 ${
                       todayData.log?.breakfastDone
                         ? 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30'
-                        : 'bg-slate-300 dark:bg-zinc-600'
+                        : 'bg-stone-300 dark:bg-stone-600'
                     }`}
                   >
                     <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
@@ -795,7 +798,7 @@ export default function DietPage() {
                       {todayData.log?.breakfastDone ? (
                         <CheckCircle2 className="w-4 h-4 text-amber-500" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-slate-400" />
+                        <XCircle className="w-4 h-4 text-stone-400" />
                       )}
                     </div>
                   </button>
@@ -806,7 +809,7 @@ export default function DietPage() {
 
           {/* 점심 */}
           {todayData.plan.lunch !== '-' && (
-            <Card className="border-0 bg-card/50">
+            <Card className="border-stone-200 dark:border-stone-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -827,7 +830,7 @@ export default function DietPage() {
                     className={`relative w-14 h-8 rounded-full transition-all duration-300 ${
                       todayData.log?.lunchDone
                         ? 'bg-gradient-to-r from-orange-400 to-red-500 shadow-lg shadow-orange-500/30'
-                        : 'bg-slate-300 dark:bg-zinc-600'
+                        : 'bg-stone-300 dark:bg-stone-600'
                     }`}
                   >
                     <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
@@ -836,7 +839,7 @@ export default function DietPage() {
                       {todayData.log?.lunchDone ? (
                         <CheckCircle2 className="w-4 h-4 text-orange-500" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-slate-400" />
+                        <XCircle className="w-4 h-4 text-stone-400" />
                       )}
                     </div>
                   </button>
@@ -847,7 +850,7 @@ export default function DietPage() {
 
           {/* 간식 */}
           {todayData.plan.snack && todayData.plan.snack !== '-' && (
-            <Card className="border-0 bg-card/50">
+            <Card className="border-stone-200 dark:border-stone-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -868,7 +871,7 @@ export default function DietPage() {
                     className={`relative w-14 h-8 rounded-full transition-all duration-300 ${
                       todayData.log?.snackDone
                         ? 'bg-gradient-to-r from-lime-400 to-green-500 shadow-lg shadow-lime-500/30'
-                        : 'bg-slate-300 dark:bg-zinc-600'
+                        : 'bg-stone-300 dark:bg-stone-600'
                     }`}
                   >
                     <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
@@ -877,7 +880,7 @@ export default function DietPage() {
                       {todayData.log?.snackDone ? (
                         <CheckCircle2 className="w-4 h-4 text-lime-500" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-slate-400" />
+                        <XCircle className="w-4 h-4 text-stone-400" />
                       )}
                     </div>
                   </button>
@@ -888,7 +891,7 @@ export default function DietPage() {
 
           {/* 저녁 */}
           {todayData.plan.dinner !== '-' && (
-            <Card className="border-0 bg-card/50">
+            <Card className="border-stone-200 dark:border-stone-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -909,7 +912,7 @@ export default function DietPage() {
                     className={`relative w-14 h-8 rounded-full transition-all duration-300 ${
                       todayData.log?.dinnerDone
                         ? 'bg-gradient-to-r from-purple-400 to-violet-500 shadow-lg shadow-purple-500/30'
-                        : 'bg-slate-300 dark:bg-zinc-600'
+                        : 'bg-stone-300 dark:bg-stone-600'
                     }`}
                   >
                     <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
@@ -918,7 +921,7 @@ export default function DietPage() {
                       {todayData.log?.dinnerDone ? (
                         <CheckCircle2 className="w-4 h-4 text-purple-500" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-slate-400" />
+                        <XCircle className="w-4 h-4 text-stone-400" />
                       )}
                     </div>
                   </button>
@@ -997,7 +1000,7 @@ export default function DietPage() {
 
       {/* 주차별 허용 식품 */}
       {weekNotes && (
-        <Card className="border-0 bg-card/50">
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardContent className="p-4">
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <Info className="w-4 h-4 text-blue-400" />

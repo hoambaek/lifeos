@@ -23,7 +23,7 @@ import {
 
 // 스켈레톤 컴포넌트
 const SkeletonBox = ({ className }: { className?: string }) => (
-  <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+  <div className={`animate-pulse bg-stone-200 dark:bg-stone-800 rounded-lg ${className}`} />
 )
 
 interface InBodyRecord {
@@ -316,7 +316,7 @@ export default function GuidePage() {
     return (
       <div className="p-4 space-y-4 pb-20">
         {/* 맞춤 가이드 스켈레톤 */}
-        <Card className="border-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10">
+        <Card className="border-stone-200 dark:border-stone-800">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <SkeletonBox className="h-6 w-24" />
@@ -366,18 +366,27 @@ export default function GuidePage() {
   }
 
   return (
-    <div className="p-4 space-y-4 pb-20">
+    <div className="px-6 py-8 space-y-8 pb-24">
+      {/* 페이지 헤더 */}
+      <div>
+        <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-200">
+          가이드
+        </h1>
+        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">인바디 기반 맞춤 운동/식단 가이드</p>
+        <hr className="editorial-rule mt-4" />
+      </div>
+
       {/* 인바디 기반 맞춤 가이드 */}
       {latestInbody && personalizedGuides.length > 0 && (
-        <Card className="border-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10">
+        <Card className="border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/50">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-500" />
+              <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
+                <Sparkles className="w-4 h-4 text-stone-500" />
                 맞춤 가이드
               </CardTitle>
-              <span className="text-xs text-muted-foreground">
-                {format(new Date(latestInbody.date), 'M/d', { locale: ko })} 인바디 기준
+              <span className="editorial-label">
+                {format(new Date(latestInbody.date), 'M/d', { locale: ko })} 기준
               </span>
             </div>
           </CardHeader>
@@ -460,10 +469,10 @@ export default function GuidePage() {
       )}
 
       {/* 대체 식품 환산기 */}
-      <Card>
+      <Card className="border-stone-200 dark:border-stone-800">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <ArrowRightLeft className="w-5 h-5" />
+          <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
+            <ArrowRightLeft className="w-4 h-4 text-stone-500" />
             대체 식품 환산기
           </CardTitle>
         </CardHeader>
@@ -502,10 +511,10 @@ export default function GuidePage() {
       </Card>
 
       {/* 단계별 전략 가이드 */}
-      <Card>
+      <Card className="border-stone-200 dark:border-stone-800">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Lightbulb className="w-5 h-5" />
+          <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
+            <Lightbulb className="w-4 h-4 text-stone-500" />
             단계별 전략 가이드
           </CardTitle>
         </CardHeader>

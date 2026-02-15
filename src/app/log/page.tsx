@@ -12,7 +12,7 @@ import { Scale, Check, X } from 'lucide-react'
 
 // 스켈레톤 컴포넌트
 const SkeletonBox = ({ className }: { className?: string }) => (
-  <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+  <div className={`animate-pulse bg-stone-200 dark:bg-stone-800 rounded-lg ${className}`} />
 )
 
 interface DailyLogData {
@@ -162,12 +162,21 @@ export default function LogPage() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="px-6 py-8 space-y-8 pb-24">
+      {/* 페이지 헤더 */}
+      <div>
+        <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-200">
+          기록
+        </h1>
+        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">체중과 단백질 섭취를 추적합니다</p>
+        <hr className="editorial-rule mt-4" />
+      </div>
+
       {/* 체중 기록 */}
-      <Card>
+      <Card className="border-stone-200 dark:border-stone-800">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Scale className="w-5 h-5" />
+          <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
+            <Scale className="w-4 h-4 text-stone-500" />
             오늘의 체중
           </CardTitle>
         </CardHeader>
@@ -192,9 +201,9 @@ export default function LogPage() {
       </Card>
 
       {/* 단백질 계산기 */}
-      <Card>
+      <Card className="border-stone-200 dark:border-stone-800">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">단백질 계산기</CardTitle>
+          <CardTitle className="text-base font-serif text-stone-800 dark:text-stone-200">단백질 계산기</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-4 gap-2 mb-4">
@@ -219,9 +228,9 @@ export default function LogPage() {
       </Card>
 
       {/* 캘린더 뷰 */}
-      <Card>
+      <Card className="border-stone-200 dark:border-stone-800">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">이번 달 기록</CardTitle>
+          <CardTitle className="text-base font-serif text-stone-800 dark:text-stone-200">이번 달 기록</CardTitle>
         </CardHeader>
         <CardContent>
           <Calendar
