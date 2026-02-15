@@ -60,8 +60,8 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
     <div
       className={`challenge-card relative p-4 rounded-xl transition-all duration-500 ${
         isCompleted
-          ? 'bg-gradient-to-br from-lime-100 via-green-50 to-emerald-50 dark:from-lime-950/40 dark:via-green-950/30 dark:to-emerald-950/30 border border-lime-300/50 dark:border-lime-700/50 shadow-lg shadow-lime-200/30 dark:shadow-lime-900/20'
-          : 'bg-gradient-to-br from-emerald-50/80 via-green-50/50 to-teal-50/30 dark:from-emerald-950/30 dark:via-green-950/20 dark:to-teal-950/20 border border-emerald-200/60 dark:border-emerald-900/30 shadow-sm shadow-emerald-100/50 dark:shadow-none'
+          ? 'bg-stone-100 dark:bg-stone-800/50 border border-emerald-300/50 dark:border-emerald-700/50'
+          : 'bg-stone-50 dark:bg-stone-900/30 border border-stone-200 dark:border-stone-800'
       }`}
     >
       {/* 완료 버스트 효과 */}
@@ -75,20 +75,20 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
           <div className="flex items-center gap-2">
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                isCompleted ? 'bg-lime-500/20' : 'bg-slate-200 dark:bg-zinc-800'
+                isCompleted ? 'bg-lime-500/20' : 'bg-stone-200 dark:bg-stone-800'
               }`}
             >
               {isCompleted ? (
                 <CheckCircle2 className="w-5 h-5 text-lime-500 dark:text-lime-400" />
               ) : (
-                <Target className="w-5 h-5 text-slate-500 dark:text-zinc-500" />
+                <Target className="w-5 h-5 text-stone-500 dark:text-stone-500" />
               )}
             </div>
             <div>
-              <h4 className={`font-bold ${isCompleted ? 'text-lime-600 dark:text-lime-400' : 'text-slate-700 dark:text-zinc-300'}`}>
+              <h4 className={`font-bold ${isCompleted ? 'text-lime-600 dark:text-lime-400' : 'text-stone-700 dark:text-stone-300'}`}>
                 {challenge.nameKo}
               </h4>
-              <p className="text-xs text-slate-500 dark:text-zinc-500">{challenge.descriptionKo}</p>
+              <p className="text-xs text-stone-500 dark:text-stone-500">{challenge.descriptionKo}</p>
             </div>
           </div>
 
@@ -107,14 +107,14 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
         {/* 진행바 */}
         <div className="mb-3">
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-slate-600 dark:text-zinc-400">
+            <span className="text-stone-600 dark:text-stone-400">
               {currentValue} / {challenge.targetValue}
             </span>
-            <span className="text-slate-500 dark:text-zinc-500">{Math.round(progress)}%</span>
+            <span className="text-stone-500 dark:text-stone-500">{Math.round(progress)}%</span>
           </div>
           <Progress
             value={progress}
-            className={`h-2 ${isCompleted ? 'bg-lime-500/20' : 'bg-slate-200 dark:bg-zinc-800'}`}
+            className={`h-2 ${isCompleted ? 'bg-lime-500/20' : 'bg-stone-200 dark:bg-stone-800'}`}
           />
         </div>
 
@@ -122,7 +122,7 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs">
             {/* 남은 시간 */}
-            <div className="flex items-center gap-1 text-slate-500 dark:text-zinc-500">
+            <div className="flex items-center gap-1 text-stone-500 dark:text-stone-500">
               <Clock className="w-3 h-3" />
               <span>{daysRemaining}일 남음</span>
             </div>
@@ -153,7 +153,7 @@ export function ChallengeCard({ challenge, userChallenge }: ChallengeCardProps) 
           )}
 
           {isClaimed && (
-            <span className="text-xs text-slate-500 dark:text-zinc-500">수령 완료</span>
+            <span className="text-xs text-stone-500 dark:text-stone-500">수령 완료</span>
           )}
         </div>
       </div>

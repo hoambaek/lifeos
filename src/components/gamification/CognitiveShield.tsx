@@ -38,7 +38,7 @@ export function CognitiveShield({
   return (
     <div
       className={`relative overflow-hidden rounded-xl p-4 ${colorClasses.bg} border ${colorClasses.border} shadow-sm ${
-        shieldData.status === 'fortified' ? 'shield-fortified shadow-lg shadow-amber-200/30 dark:shadow-amber-900/20' : 'shadow-slate-100/50 dark:shadow-none'
+        shieldData.status === 'fortified' ? 'shield-fortified shadow-lg shadow-amber-200/30 dark:shadow-amber-900/20' : 'shadow-stone-100/50 dark:shadow-none'
       }`}
     >
       {/* 배경 효과 */}
@@ -69,51 +69,51 @@ export function CognitiveShield({
             <span className={`text-2xl font-black ${colorClasses.text}`}>
               {shieldData.level}
             </span>
-            <span className="text-sm text-slate-500 dark:text-zinc-500">%</span>
+            <span className="text-sm text-stone-500 dark:text-stone-500">%</span>
           </div>
         </div>
 
         {/* 프로그레스 바 */}
-        <div className="relative h-3 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden mb-3">
+        <div className="relative h-3 rounded-full bg-stone-200 dark:bg-stone-800 overflow-hidden mb-3">
           <div
             className={`absolute inset-y-0 left-0 ${colorClasses.progress} rounded-full transition-all duration-500`}
             style={{ width: `${shieldData.level}%` }}
           />
           {/* 마일스톤 마커 */}
           <div className="absolute inset-0 flex justify-between px-1">
-            <div className="w-px bg-slate-300 dark:bg-zinc-700" style={{ marginLeft: '30%' }} />
-            <div className="w-px bg-slate-300 dark:bg-zinc-700" style={{ marginLeft: '60%' }} />
-            <div className="w-px bg-slate-300 dark:bg-zinc-700" style={{ marginLeft: '85%' }} />
+            <div className="w-px bg-stone-300 dark:bg-stone-700" style={{ marginLeft: '30%' }} />
+            <div className="w-px bg-stone-300 dark:bg-stone-700" style={{ marginLeft: '60%' }} />
+            <div className="w-px bg-stone-300 dark:bg-stone-700" style={{ marginLeft: '85%' }} />
           </div>
         </div>
 
         {/* 상태 메시지 */}
         <div className="flex items-center gap-2">
           <Brain className={`w-4 h-4 ${colorClasses.text} flex-shrink-0`} />
-          <p className="text-xs text-slate-600 dark:text-zinc-400">
+          <p className="text-xs text-stone-600 dark:text-stone-400">
             {shieldData.statusMessage.message}
           </p>
         </div>
 
         {/* 구성 요소 표시 */}
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-zinc-800">
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-stone-200 dark:border-stone-800">
           <div className="flex items-center gap-1">
             <Zap className="w-3 h-3 text-orange-400" />
-            <span className="text-xs text-slate-500 dark:text-zinc-500">
-              스트릭 <span className="text-slate-700 dark:text-zinc-300">{currentStreak}일</span>
+            <span className="text-xs text-stone-500 dark:text-stone-500">
+              스트릭 <span className="text-stone-700 dark:text-stone-300">{currentStreak}일</span>
             </span>
           </div>
           <div className="flex items-center gap-1">
             <TrendingUp className="w-3 h-3 text-green-400" />
-            <span className="text-xs text-slate-500 dark:text-zinc-500">
-              운동 <span className="text-slate-700 dark:text-zinc-300">{totalWorkouts}회</span>
+            <span className="text-xs text-stone-500 dark:text-stone-500">
+              운동 <span className="text-stone-700 dark:text-stone-300">{totalWorkouts}회</span>
             </span>
           </div>
           {perfectDays > 0 && (
             <div className="flex items-center gap-1">
               <Shield className="w-3 h-3 text-violet-400" />
-              <span className="text-xs text-slate-500 dark:text-zinc-500">
-                퍼펙트 <span className="text-slate-700 dark:text-zinc-300">{perfectDays}일</span>
+              <span className="text-xs text-stone-500 dark:text-stone-500">
+                퍼펙트 <span className="text-stone-700 dark:text-stone-300">{perfectDays}일</span>
               </span>
             </div>
           )}

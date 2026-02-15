@@ -473,20 +473,23 @@ export default function Dashboard() {
 
   // 스켈레톤 컴포넌트
   const SkeletonBox = ({ className }: { className?: string }) => (
-    <div className={`animate-pulse bg-slate-200 dark:bg-zinc-800 rounded-lg ${className}`} />
+    <div className={`animate-pulse bg-stone-200 dark:bg-stone-800 rounded-lg ${className}`} />
   )
 
   const SkeletonCard = ({ className }: { className?: string }) => (
-    <div className={`animate-pulse rounded-2xl bg-slate-200/80 dark:bg-zinc-800/80 ${className}`} />
+    <div className={`animate-pulse rounded-2xl bg-stone-200/80 dark:bg-stone-800/80 ${className}`} />
   )
 
-  // 에디토리얼 섹션 헤더
-  const EditorialSection = ({ title, className = '' }: { title: string; className?: string }) => (
-    <div className={className}>
-      <h2 className="font-serif text-xl font-semibold tracking-tight text-stone-800 dark:text-stone-200 mb-1">
-        {title}
-      </h2>
-      <hr className="editorial-rule mb-5" />
+  // 매거진 섹션 헤더 — 좌측 accent bar + 대문자 레이블
+  const SectionHeader = ({ title, label }: { title: string; label?: string }) => (
+    <div className="flex items-stretch gap-3 mb-6">
+      <div className="w-1 rounded-full bg-stone-900 dark:bg-stone-100 flex-shrink-0" />
+      <div>
+        {label && <p className="editorial-label mb-0.5">{label}</p>}
+        <h2 className="font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+          {title}
+        </h2>
+      </div>
     </div>
   )
 
@@ -557,8 +560,6 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <hr className="editorial-rule mx-6" />
-
       {/* 설정 다이얼로그 */}
       <Dialog open={isSetupOpen} onOpenChange={setIsSetupOpen}>
         <DialogContent className="max-w-sm mx-auto">
@@ -603,8 +604,8 @@ export default function Dashboard() {
       </Dialog>
 
       {/* ═══ SECTION 1: 운동 ═══ */}
-      <section className="px-6 pt-6 pb-8 opacity-0 animate-fade-in-up animation-delay-100">
-        <EditorialSection title="오늘의 운동" />
+      <section className="px-6 pt-8 pb-10 bg-stone-50/80 dark:bg-stone-900/30 opacity-0 animate-fade-in-up animation-delay-100">
+        <SectionHeader title="오늘의 운동" label="Section 01" />
 
         {/* 운동 메인 카드 */}
         <div className={`relative overflow-hidden rounded-2xl p-6 transition-all duration-500 ${
@@ -754,19 +755,15 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <hr className="editorial-rule mx-6" />
-
       {/* ═══ SECTION 2: 식단 관리 ═══ */}
-      <section className="px-6 pt-6 pb-8 opacity-0 animate-fade-in-up animation-delay-200">
-        <EditorialSection title="식단 관리" />
+      <section className="px-6 pt-8 pb-10 opacity-0 animate-fade-in-up animation-delay-200">
+        <SectionHeader title="식단 관리" label="Section 02" />
         <DietStatusCard />
       </section>
 
-      <hr className="editorial-rule mx-6" />
-
       {/* ═══ SECTION 3: COGNITIVE SHIELD ═══ */}
-      <section className="px-6 pt-6 pb-8 opacity-0 animate-fade-in-up animation-delay-250">
-        <EditorialSection title="Cognitive Shield" />
+      <section className="px-6 pt-8 pb-10 bg-stone-50/80 dark:bg-stone-900/30 opacity-0 animate-fade-in-up animation-delay-250">
+        <SectionHeader title="Cognitive Shield" label="Section 03" />
 
         <CognitiveShield
           currentStreak={streak.currentStreak}
@@ -818,11 +815,9 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <hr className="editorial-rule mx-6" />
-
       {/* ═══ SECTION 4: 챌린지 ═══ */}
-      <section className="px-6 pt-6 pb-8 opacity-0 animate-fade-in-up animation-delay-300">
-        <EditorialSection title="이번 주 챌린지" />
+      <section className="px-6 pt-8 pb-10 opacity-0 animate-fade-in-up animation-delay-300">
+        <SectionHeader title="이번 주 챌린지" label="Section 04" />
 
         {isGamificationLoading ? (
           <div className="space-y-3">
