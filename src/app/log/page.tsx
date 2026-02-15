@@ -162,7 +162,7 @@ export default function LogPage() {
   }
 
   return (
-    <div className="px-6 py-8 space-y-8 pb-24">
+    <div className="px-6 py-8 space-y-8 pb-32">
       {/* 페이지 헤더 */}
       <div>
         <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-200">
