@@ -238,7 +238,7 @@ export default function LogPage() {
             selected={selectedDate}
             onSelect={(date) => date && setSelectedDate(date)}
             locale={ko}
-            className="rounded-md border w-full"
+            className="rounded-md border w-full overflow-hidden"
             modifiers={{
               success: (date) => getDayStatus(date) === 'success',
               partial: (date) => getDayStatus(date) === 'partial',
