@@ -11,6 +11,6 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env("TURSO_DATABASE_URL"),
+    url: process.env.TURSO_DATABASE_URL ?? "file:./dev.db",
   },
 });
