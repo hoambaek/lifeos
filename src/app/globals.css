@@ -442,12 +442,11 @@ html {
 
 /* iOS Safari calendar fix - aspect-ratio in flex containers */
 @supports (-webkit-touch-callout: none) {
-  [data-slot="calendar"] table tbody tr:last-child {
-    padding-bottom: 4px;
-  }
   [data-slot="calendar"] table tbody tr td {
-    -webkit-aspect-ratio: 1 / 1;
-    height: auto !important;
+    min-height: 2.5rem;
+  }
+  [data-slot="calendar"] table tbody tr td button {
+    min-height: 2.5rem;
   }
 }
 
