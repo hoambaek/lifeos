@@ -73,7 +73,6 @@ export default function Dashboard() {
       if (date === today) {
         setWaterCount(count)
       } else {
-        // 새 날짜면 초기화
         localStorage.setItem('waterCount', JSON.stringify({ date: today, count: 0 }))
       }
     }
@@ -82,19 +81,18 @@ export default function Dashboard() {
   // todayLog가 로드되면 waterDone 상태와 동기화
   useEffect(() => {
     if (todayLog?.waterDone) {
-      // 이미 완료 상태면 6으로 설정
       const today = format(new Date(), 'yyyy-MM-dd')
       const savedWaterData = localStorage.getItem('waterCount')
       if (savedWaterData) {
         const { date, count } = JSON.parse(savedWaterData)
-        if (date === today && count >= 6) return // 이미 동기화됨
+        if (date === today && count >= 6) return
       }
       setWaterCount(6)
       localStorage.setItem('waterCount', JSON.stringify({ date: today, count: 6 }))
     }
   }, [todayLog?.waterDone])
 
-  // 피터 틸 명언 설정 (하루에 한 번만 변경)
+  // 피터 틸 명언 설정
   useEffect(() => {
     const today = format(new Date(), 'yyyy-MM-dd')
     const savedQuoteData = localStorage.getItem('thielQuote')
@@ -113,7 +111,6 @@ export default function Dashboard() {
   // 초기 데이터 로드
   useEffect(() => {
     const loadData = async () => {
-      // Config & Log 로드 (병렬)
       const configPromise = fetch('/api/config').then(res => res.json())
       const logPromise = fetch('/api/log').then(res => res.json())
 
@@ -138,7 +135,6 @@ export default function Dashboard() {
         })
       }
 
-      // 인바디 로드 (별도)
       fetch('/api/inbody?latest=true')
         .then(res => res.json())
         .then(inbodyData => {
@@ -149,7 +145,6 @@ export default function Dashboard() {
         .catch(() => console.log('No inbody data'))
         .finally(() => setIsInbodyLoading(false))
 
-      // 스트릭 계산 및 인지 방패 데이터 (별도)
       const end = new Date()
       const start = new Date()
       start.setDate(start.getDate() - 180)
@@ -177,7 +172,6 @@ export default function Dashboard() {
         .catch(() => console.log('No streak data'))
         .finally(() => setIsStreakLoading(false))
 
-      // 게이미피케이션 데이터 로드 (별도)
       fetch('/api/gamification')
         .then(res => res.json())
         .then(gamificationData => {
@@ -213,12 +207,10 @@ export default function Dashboard() {
     cleanDiet: boolean
     workoutDone: boolean
   }>): StreakData => {
-    // 날짜별로 정렬 (최신순)
     const sortedLogs = [...logs].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     )
 
-    // 완료된 날짜 체크 (모든 퀘스트 완료)
     const isComplete = (log: typeof sortedLogs[0]) =>
       log.waterDone && log.proteinAmount >= 150 && log.cleanDiet && log.workoutDone
 
@@ -228,13 +220,11 @@ export default function Dashboard() {
     const today = format(new Date(), 'yyyy-MM-dd')
     let todayComplete = false
 
-    // 오늘 완료 여부 체크
     const todayLog = sortedLogs.find(log => log.date === today)
     if (todayLog && isComplete(todayLog)) {
       todayComplete = true
     }
 
-    // 연속 스트릭 계산
     let expectedDate = new Date()
 
     for (const log of sortedLogs) {
@@ -246,7 +236,6 @@ export default function Dashboard() {
           tempStreak++
           longestStreak = Math.max(longestStreak, tempStreak)
         } else {
-          // 오늘이 아니면 스트릭 끊김
           if (logDate !== today) {
             if (currentStreak === 0) currentStreak = tempStreak
             tempStreak = 0
@@ -254,7 +243,6 @@ export default function Dashboard() {
         }
         expectedDate.setDate(expectedDate.getDate() - 1)
       } else {
-        // 날짜가 건너뛰어졌으면 스트릭 끊김
         if (currentStreak === 0) currentStreak = tempStreak
         tempStreak = 0
         break
@@ -292,7 +280,7 @@ export default function Dashboard() {
   }
 
   const handleWaterClick = async () => {
-    if (waterCount >= 6) return // 이미 완료
+    if (waterCount >= 6) return
 
     const newCount = waterCount + 1
     setWaterCount(newCount)
@@ -300,16 +288,14 @@ export default function Dashboard() {
     const today = format(new Date(), 'yyyy-MM-dd')
     localStorage.setItem('waterCount', JSON.stringify({ date: today, count: newCount }))
 
-    // 6번째 클릭 시 waterDone: true로 저장
     if (newCount >= 6) {
       await handleUpdateLog({ waterDone: true })
     }
   }
 
-const handleWorkoutToggle = async () => {
+  const handleWorkoutToggle = async () => {
     const newState = !todayLog?.workoutDone
     if (newState) {
-      // 운동 완료 - 로그 먼저 업데이트 (챌린지 진행 포함)
       await handleUpdateLog({ workoutDone: true, workoutPart: todayWorkout })
       setCelebration(true)
       setTimeout(() => setCelebration(false), 1000)
@@ -348,12 +334,9 @@ const handleWorkoutToggle = async () => {
           })
         }
 
-        // 챌린지 진행도 업데이트
-        // 운동 부위에 따른 챌린지 매칭
         const workoutPart = todayWorkout?.toLowerCase() || ''
         const challengeUpdates: Promise<Response>[] = []
 
-        // 활성 챌린지 조회 후 해당하는 챌린지 업데이트
         const challengeRes = await fetch('/api/gamification')
         const challengeData = await challengeRes.json()
 
@@ -364,7 +347,6 @@ const handleWorkoutToggle = async () => {
 
             let shouldUpdate = false
 
-            // 운동 부위별 챌린지 매칭
             if (challenge.key.includes('chest') && (workoutPart.includes('가슴') || workoutPart.includes('chest'))) {
               shouldUpdate = true
             } else if (challenge.key.includes('leg') && (workoutPart.includes('하체') || workoutPart.includes('leg'))) {
@@ -372,7 +354,6 @@ const handleWorkoutToggle = async () => {
             } else if (challenge.key.includes('back') && (workoutPart.includes('등') || workoutPart.includes('back'))) {
               shouldUpdate = true
             } else if (challenge.key.includes('workout_5') || challenge.key.includes('workout_7')) {
-              // 일반 운동 횟수 챌린지
               shouldUpdate = true
             }
 
@@ -388,12 +369,10 @@ const handleWorkoutToggle = async () => {
           }
         }
 
-        // 모든 챌린지 업데이트 실행
         if (challengeUpdates.length > 0) {
           await Promise.all(challengeUpdates)
         }
 
-        // 챌린지 데이터 새로고침
         const gamificationRes = await fetch('/api/gamification')
         const gamificationData = await gamificationRes.json()
         if (gamificationData.activeChallenges) {
@@ -403,7 +382,6 @@ const handleWorkoutToggle = async () => {
           setUserChallenges(gamificationData.userChallenges)
         }
 
-        // 스트릭, 운동횟수, 퍼펙트데이 새로고침 (Cognitive Shield 업데이트용)
         const end = new Date()
         const start = new Date()
         start.setDate(start.getDate() - 180)
@@ -450,7 +428,6 @@ const handleWorkoutToggle = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...todayLog, ...resetData }),
     })
-    // 물 섭취량도 초기화
     setWaterCount(0)
     const today = format(new Date(), 'yyyy-MM-dd')
     localStorage.setItem('waterCount', JSON.stringify({ date: today, count: 0 }))
@@ -488,7 +465,6 @@ const handleWorkoutToggle = async () => {
   const proteinGoal = 150
   const proteinProgress = Math.min(((todayLog?.proteinAmount || 0) / proteinGoal) * 100, 100)
 
-  // 퀘스트 완료 개수
   const questsCompleted = [
     waterCount >= 6,
     (todayLog?.proteinAmount || 0) >= proteinGoal,
@@ -504,29 +480,34 @@ const handleWorkoutToggle = async () => {
     <div className={`animate-pulse rounded-2xl bg-slate-200/80 dark:bg-zinc-800/80 ${className}`} />
   )
 
+  // 섹션 라벨 컴포넌트
+  const SectionLabel = ({ icon: Icon, label, accentColor }: { icon: React.ElementType, label: string, accentColor: string }) => (
+    <div className="flex items-center gap-2.5 mb-4">
+      <div className={`w-1 h-5 rounded-full ${accentColor}`} />
+      <Icon className="w-4 h-4 text-slate-400 dark:text-zinc-500" />
+      <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-zinc-500">
+        {label}
+      </span>
+    </div>
+  )
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
-      {/* XP 획득 애니메이션 */}
+    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950">
+      {/* Animations */}
       <XPGainAnimation />
-
-      {/* 레벨업 모달 */}
       <LevelUpModal />
-
-      {/* 뱃지 언락 모달 */}
       <BadgeUnlockModal />
 
       {/* ═══════════════════════════════════════════════
-          HERO SECTION - 헤더 & 핵심 통계
+          COMPACT HEADER
       ═══════════════════════════════════════════════ */}
       <div className="relative overflow-hidden">
-        {/* 배경 그라데이션 효과 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/8 via-purple-500/5 to-fuchsia-500/8 dark:from-violet-500/15 dark:via-purple-500/10 dark:to-fuchsia-500/15" />
-        <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-amber-400/10 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-400/10 to-transparent rounded-full blur-2xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-100 to-slate-50 dark:from-zinc-900 dark:to-zinc-950" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-violet-400/8 to-transparent rounded-full blur-3xl dark:from-violet-500/10" />
 
-        <div className="relative px-5 pt-6 pb-5">
-          {/* 헤더 - 날짜 & 설정 */}
-          <div className="flex items-center justify-between mb-4 opacity-0 animate-fade-in-up">
+        <div className="relative px-5 pt-6 pb-4">
+          {/* 날짜 & 설정 */}
+          <div className="flex items-center justify-between mb-3 opacity-0 animate-fade-in-up">
             <p className="text-sm font-medium text-slate-500 dark:text-zinc-500">
               {format(new Date(), 'M월 d일 EEEE', { locale: ko })}
             </p>
@@ -543,109 +524,56 @@ const handleWorkoutToggle = async () => {
             </div>
           </div>
 
-          {/* D+DAY 대형 디스플레이 */}
-          <div className="flex items-end justify-between mb-5 opacity-0 animate-fade-in-up animation-delay-50">
+          {/* D+DAY + 핵심 통계 */}
+          <div className="flex items-end justify-between mb-4 opacity-0 animate-fade-in-up animation-delay-50">
             <div>
               {isConfigLoading ? (
-                <>
-                  <SkeletonBox className="h-12 w-32 mb-2" />
-                  <SkeletonBox className="h-1.5 w-24" />
-                </>
+                <SkeletonBox className="h-10 w-28" />
               ) : (
-                <>
-                  <span className="text-5xl font-black tracking-tighter gradient-text">D+{daysPassed}</span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="h-1.5 w-24 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all duration-500"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-slate-400 dark:text-zinc-500">180일</span>
-                  </div>
-                </>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black tracking-tighter gradient-text">D+{daysPassed}</span>
+                  <span className="text-xs font-mono font-semibold text-slate-400 dark:text-zinc-500">/ {totalDays}</span>
+                </div>
               )}
             </div>
 
-            {/* 인바디 점수 뱃지 */}
-            {isInbodyLoading ? (
-              <div className="flex flex-col items-end">
-                <SkeletonBox className="h-3 w-12 mb-1" />
-                <SkeletonBox className="h-8 w-14" />
-              </div>
-            ) : latestInbody ? (
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-zinc-500 font-semibold">INBODY</span>
-                <span className="text-3xl font-black text-amber-500 dark:text-amber-400">{latestInbody.inbodyScore}</span>
-              </div>
-            ) : null}
+            {/* 스트릭 + 퀘스트 미니 */}
+            <div className="flex items-center gap-3">
+              {isStreakLoading ? (
+                <SkeletonBox className="h-8 w-16" />
+              ) : (
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${
+                  streak.todayComplete
+                    ? 'bg-orange-100 dark:bg-orange-950/50'
+                    : 'bg-slate-100 dark:bg-zinc-900'
+                }`}>
+                  <Flame className={`w-3.5 h-3.5 ${streak.todayComplete ? 'text-orange-500' : 'text-slate-400'}`} />
+                  <span className={`text-sm font-black font-mono ${streak.todayComplete ? 'text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-zinc-400'}`}>
+                    {streak.currentStreak}
+                  </span>
+                </div>
+              )}
+              {!isConfigLoading && (
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${
+                  questsCompleted >= 3
+                    ? 'bg-emerald-100 dark:bg-emerald-950/50'
+                    : 'bg-slate-100 dark:bg-zinc-900'
+                }`}>
+                  <Target className={`w-3.5 h-3.5 ${questsCompleted >= 3 ? 'text-emerald-500' : 'text-slate-400'}`} />
+                  <span className={`text-sm font-black font-mono ${questsCompleted >= 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-zinc-400'}`}>
+                    {questsCompleted}/3
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* XP 바 */}
           <div className="opacity-0 animate-fade-in-up animation-delay-75">
             {isGamificationLoading ? (
-              <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60">
-                <div className="flex items-center justify-between mb-2">
-                  <SkeletonBox className="h-5 w-20" />
-                  <SkeletonBox className="h-4 w-24" />
-                </div>
-                <SkeletonBox className="h-3 w-full rounded-full" />
-              </div>
+              <SkeletonBox className="h-16 w-full rounded-xl" />
             ) : (
               <XPBar compact={false} />
-            )}
-          </div>
-
-          {/* 스트릭 + 퀘스트 미니 카드 (2열) */}
-          <div className="grid grid-cols-2 gap-3 mt-4 opacity-0 animate-fade-in-up animation-delay-100">
-            {/* 스트릭 미니 */}
-            {isStreakLoading ? (
-              <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60">
-                <div className="flex items-center gap-2 mb-2">
-                  <SkeletonBox className="h-4 w-4 rounded" />
-                  <SkeletonBox className="h-3 w-12" />
-                </div>
-                <SkeletonBox className="h-8 w-16" />
-              </div>
-            ) : (
-              <div className={`p-4 rounded-2xl backdrop-blur-sm transition-all ${
-                streak.todayComplete
-                  ? 'bg-gradient-to-br from-orange-200/80 to-amber-100/60 dark:from-orange-950/60 dark:to-amber-950/40 border border-orange-300/60 dark:border-orange-700/40 shadow-lg shadow-orange-200/40 dark:shadow-orange-900/30'
-                  : 'bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm'
-              }`}>
-                <div className="flex items-center gap-2 mb-1">
-                  <Flame className={`w-4 h-4 ${streak.todayComplete ? 'text-orange-500' : 'text-slate-400 dark:text-zinc-500'}`} />
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-zinc-500">STREAK</span>
-                </div>
-                <p className={`text-3xl font-black ${streak.todayComplete ? 'text-orange-600 dark:text-orange-400' : 'text-slate-700 dark:text-zinc-300'}`}>
-                  {streak.currentStreak}<span className="text-sm font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">일</span>
-                </p>
-              </div>
-            )}
-
-            {/* 퀘스트 미니 */}
-            {isConfigLoading ? (
-              <div className="p-4 rounded-2xl bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60">
-                <div className="flex items-center gap-2 mb-2">
-                  <SkeletonBox className="h-4 w-4 rounded" />
-                  <SkeletonBox className="h-3 w-12" />
-                </div>
-                <SkeletonBox className="h-8 w-12" />
-              </div>
-            ) : (
-              <div className={`p-4 rounded-2xl backdrop-blur-sm transition-all ${
-                questsCompleted >= 3
-                  ? 'bg-gradient-to-br from-emerald-200/80 to-green-100/60 dark:from-emerald-950/60 dark:to-green-950/40 border border-emerald-300/60 dark:border-emerald-700/40 shadow-lg shadow-emerald-200/40 dark:shadow-emerald-900/30'
-                  : 'bg-white/70 dark:bg-zinc-900/70 border border-slate-200/60 dark:border-zinc-700/60 shadow-sm'
-              }`}>
-                <div className="flex items-center gap-2 mb-1">
-                  <Target className={`w-4 h-4 ${questsCompleted >= 3 ? 'text-emerald-500' : 'text-slate-400 dark:text-zinc-500'}`} />
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-zinc-500">QUEST</span>
-                </div>
-                <p className={`text-3xl font-black ${questsCompleted >= 3 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-zinc-300'}`}>
-                  {questsCompleted}<span className="text-sm font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">/3</span>
-                </p>
-              </div>
             )}
           </div>
         </div>
@@ -694,97 +622,92 @@ const handleWorkoutToggle = async () => {
         </DialogContent>
       </Dialog>
 
-      {/* 메인 콘텐츠 영역 */}
-      <div className="px-5 pb-8 space-y-4">
+      {/* ═══════════════════════════════════════════════
+          SECTION 1: 운동
+      ═══════════════════════════════════════════════ */}
+      <div className="px-5 pt-6 pb-2 opacity-0 animate-fade-in-up animation-delay-100">
+        <SectionLabel icon={Dumbbell} label="오늘의 운동" accentColor="bg-violet-500" />
 
-        {/* ═══════════════════════════════════════════════
-            오늘의 운동 - 메인 CTA (가장 중요한 액션)
-        ═══════════════════════════════════════════════ */}
-        <div className="opacity-0 animate-fade-in-up animation-delay-150">
-          <div className={`relative overflow-hidden rounded-3xl p-5 transition-all duration-500 ${
-            todayLog?.workoutDone
-              ? 'bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 shadow-xl shadow-violet-500/30'
-              : 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 shadow-xl shadow-slate-500/20 dark:shadow-black/30'
-          }`}>
-            {/* 배경 패턴 */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-4 right-4 w-32 h-32 border-4 border-white rounded-full" />
-              <div className="absolute bottom-4 left-4 w-20 h-20 border-2 border-white rounded-full" />
-            </div>
+        {/* 운동 메인 카드 */}
+        <div className={`relative overflow-hidden rounded-2xl p-5 transition-all duration-500 ${
+          todayLog?.workoutDone
+            ? 'bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 shadow-xl shadow-violet-500/25'
+            : 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800 shadow-lg'
+        }`}>
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-4 right-4 w-28 h-28 border-4 border-white rounded-full" />
+            <div className="absolute bottom-4 left-4 w-16 h-16 border-2 border-white rounded-full" />
+          </div>
 
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">
-                    {format(new Date(), 'EEEE', { locale: ko })} 운동
-                  </p>
-                  <h2 className="text-white text-3xl font-black">{todayWorkout}</h2>
-                </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                  todayLog?.workoutDone ? 'bg-white/20' : 'bg-white/10'
-                }`}>
-                  {todayLog?.workoutDone ? (
-                    <Trophy className="w-7 h-7 text-amber-300" />
-                  ) : (
-                    <Dumbbell className="w-7 h-7 text-white/70" />
-                  )}
-                </div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-white/50 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">
+                  {format(new Date(), 'EEEE', { locale: ko })}
+                </p>
+                <h2 className="text-white text-3xl font-black tracking-tight">{todayWorkout}</h2>
               </div>
-
-              {todayWorkout === '휴식' ? (
-                <p className="text-white/70 text-sm">오늘은 휴식일입니다. 충분히 쉬세요!</p>
-              ) : (
-                <Button
-                  size="lg"
-                  className={`w-full h-14 text-lg font-bold rounded-2xl transition-all ${
-                    celebration ? 'celebrate' : ''
-                  } ${
-                    todayLog?.workoutDone
-                      ? 'bg-white/20 hover:bg-white/30 text-white border border-white/30'
-                      : 'bg-white hover:bg-white/90 text-slate-900'
-                  }`}
-                  onClick={handleWorkoutToggle}
-                >
-                  {todayLog?.workoutDone ? (
-                    <>
-                      <Trophy className="w-5 h-5 mr-2 text-amber-400" />
-                      완료! +100 XP
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-5 h-5 mr-2" />
-                      운동 완료하기
-                    </>
-                  )}
-                </Button>
-              )}
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                todayLog?.workoutDone ? 'bg-white/20' : 'bg-white/10'
+              }`}>
+                {todayLog?.workoutDone ? (
+                  <Trophy className="w-6 h-6 text-amber-300" />
+                ) : (
+                  <Dumbbell className="w-6 h-6 text-white/60" />
+                )}
+              </div>
             </div>
+
+            {todayWorkout === '휴식' ? (
+              <p className="text-white/60 text-sm">오늘은 휴식일입니다. 충분히 쉬세요!</p>
+            ) : (
+              <Button
+                size="lg"
+                className={`w-full h-13 text-base font-bold rounded-xl transition-all ${
+                  celebration ? 'celebrate' : ''
+                } ${
+                  todayLog?.workoutDone
+                    ? 'bg-white/20 hover:bg-white/30 text-white border border-white/20'
+                    : 'bg-white hover:bg-white/90 text-slate-900'
+                }`}
+                onClick={handleWorkoutToggle}
+              >
+                {todayLog?.workoutDone ? (
+                  <>
+                    <Trophy className="w-5 h-5 mr-2 text-amber-400" />
+                    완료! +100 XP
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-5 h-5 mr-2" />
+                    운동 완료하기
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════
-            물 + 단백질 - 2열 컴팩트 레이아웃
-        ═══════════════════════════════════════════════ */}
-        <div className="grid grid-cols-2 gap-3 opacity-0 animate-fade-in-up animation-delay-200">
+        {/* 물 + 단백질 2열 */}
+        <div className="grid grid-cols-2 gap-3 mt-3">
           {/* 물 카드 */}
-          <div className={`p-4 rounded-2xl transition-all ${
+          <div className={`p-4 rounded-2xl transition-all border ${
             waterCount >= 6
-              ? 'bg-gradient-to-br from-cyan-200/90 to-blue-100/70 dark:from-cyan-900/50 dark:to-blue-900/40 border border-cyan-300/60 dark:border-cyan-700/50 shadow-lg shadow-cyan-200/40 dark:shadow-cyan-900/30'
-              : 'bg-white/80 dark:bg-zinc-900/80 border border-slate-200/70 dark:border-zinc-700/60 shadow-sm'
+              ? 'bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200/80 dark:border-cyan-800/50'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800'
           }`}>
-            <div className="flex items-center gap-2 mb-2">
-              <Droplets className={`w-5 h-5 ${waterCount >= 6 ? 'text-cyan-500' : 'text-slate-400'}`} />
-              <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-zinc-500">WATER</span>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Droplets className={`w-4 h-4 ${waterCount >= 6 ? 'text-cyan-500' : 'text-slate-400'}`} />
+              <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-slate-400 dark:text-zinc-500">Water</span>
             </div>
-            <p className={`text-2xl font-black mb-2 ${waterCount >= 6 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-700 dark:text-zinc-300'}`}>
-              {waterCount * 500}<span className="text-xs font-semibold text-slate-400 ml-0.5">ml</span>
+            <p className={`text-2xl font-black font-mono mb-2 ${waterCount >= 6 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-700 dark:text-zinc-300'}`}>
+              {waterCount * 500}<span className="text-[10px] font-semibold text-slate-400 ml-0.5">ml</span>
             </p>
-            {/* 미니 진행 바 */}
-            <div className="grid grid-cols-6 gap-1 mb-2">
+            <div className="grid grid-cols-6 gap-1 mb-2.5">
               {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1.5 rounded-full transition-all ${
+                  className={`h-1 rounded-full transition-all ${
                     i < waterCount ? 'bg-cyan-500' : 'bg-slate-200 dark:bg-zinc-700'
                   }`}
                 />
@@ -797,28 +720,27 @@ const handleWorkoutToggle = async () => {
               className={`w-full h-8 text-xs font-bold rounded-lg ${
                 waterCount >= 6
                   ? 'bg-cyan-500 text-white cursor-default'
-                  : 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-600 dark:text-cyan-400'
+                  : 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-600 dark:text-cyan-400'
               }`}
             >
-              {waterCount >= 6 ? '✓ 완료' : '+500ml'}
+              {waterCount >= 6 ? '완료' : '+500ml'}
             </Button>
           </div>
 
           {/* 단백질 카드 */}
-          <div className={`p-4 rounded-2xl transition-all ${
+          <div className={`p-4 rounded-2xl transition-all border ${
             proteinProgress >= 100
-              ? 'bg-gradient-to-br from-rose-200/90 to-orange-100/70 dark:from-rose-900/50 dark:to-orange-900/40 border border-rose-300/60 dark:border-rose-700/50 shadow-lg shadow-rose-200/40 dark:shadow-rose-900/30'
-              : 'bg-white/80 dark:bg-zinc-900/80 border border-slate-200/70 dark:border-zinc-700/60 shadow-sm'
+              ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-800/50'
+              : 'bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800'
           }`}>
-            <div className="flex items-center gap-2 mb-2">
-              <Utensils className={`w-5 h-5 ${proteinProgress >= 100 ? 'text-rose-500' : 'text-slate-400'}`} />
-              <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-zinc-500">PROTEIN</span>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Utensils className={`w-4 h-4 ${proteinProgress >= 100 ? 'text-rose-500' : 'text-slate-400'}`} />
+              <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-slate-400 dark:text-zinc-500">Protein</span>
             </div>
-            <p className={`text-2xl font-black mb-2 ${proteinProgress >= 100 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-zinc-300'}`}>
-              {todayLog?.proteinAmount || 0}<span className="text-xs font-semibold text-slate-400 ml-0.5">g</span>
+            <p className={`text-2xl font-black font-mono mb-2 ${proteinProgress >= 100 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-zinc-300'}`}>
+              {todayLog?.proteinAmount || 0}<span className="text-[10px] font-semibold text-slate-400 ml-0.5">g</span>
             </p>
-            {/* 프로그레스 바 */}
-            <div className="h-1.5 rounded-full bg-slate-200 dark:bg-zinc-700 overflow-hidden mb-2">
+            <div className="h-1 rounded-full bg-slate-200 dark:bg-zinc-700 overflow-hidden mb-2.5">
               <div
                 className="h-full bg-gradient-to-r from-rose-500 to-orange-400 rounded-full transition-all"
                 style={{ width: `${proteinProgress}%` }}
@@ -831,10 +753,10 @@ const handleWorkoutToggle = async () => {
                   className={`w-full h-8 text-xs font-bold rounded-lg ${
                     proteinProgress >= 100
                       ? 'bg-rose-500 text-white cursor-default'
-                      : 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-600 dark:text-rose-400'
+                      : 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400'
                   }`}
                 >
-                  {proteinProgress >= 100 ? '✓ 완료' : '+ 추가'}
+                  {proteinProgress >= 100 ? '완료' : '+ 추가'}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-xs glass-card border-0">
@@ -863,142 +785,148 @@ const handleWorkoutToggle = async () => {
             </Dialog>
           </div>
         </div>
+      </div>
 
-        {/* ═══════════════════════════════════════════════
-            피터 틸 명언 - 영감 섹션
-        ═══════════════════════════════════════════════ */}
+      {/* 섹션 디바이더 */}
+      <div className="mx-5 my-4 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-zinc-800 to-transparent" />
+
+      {/* ═══════════════════════════════════════════════
+          SECTION 2: 식단 관리
+      ═══════════════════════════════════════════════ */}
+      <div className="px-5 pb-2 opacity-0 animate-fade-in-up animation-delay-200">
+        <SectionLabel icon={Utensils} label="식단 관리" accentColor="bg-orange-500" />
+        <DietStatusCard />
+      </div>
+
+      {/* 섹션 디바이더 */}
+      <div className="mx-5 my-4 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-zinc-800 to-transparent" />
+
+      {/* ═══════════════════════════════════════════════
+          SECTION 3: COGNITIVE SHIELD
+      ═══════════════════════════════════════════════ */}
+      <div className="px-5 pb-2 opacity-0 animate-fade-in-up animation-delay-250">
+        <SectionLabel icon={Brain} label="Cognitive Shield" accentColor="bg-amber-500" />
+
+        <CognitiveShield
+          currentStreak={streak.currentStreak}
+          totalWorkouts={totalWorkouts}
+          perfectDays={perfectDays}
+        />
+
+        {/* 명언 카드 */}
         {thielQuote && (
-          <div className="opacity-0 animate-fade-in-up animation-delay-225">
-            <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-violet-100/80 via-purple-50/60 to-fuchsia-50/40 dark:from-violet-950/50 dark:via-purple-950/40 dark:to-fuchsia-950/30 border border-violet-200/50 dark:border-violet-800/30">
-              <Quote className="absolute top-3 right-3 w-8 h-8 text-violet-300/50 dark:text-violet-700/50" />
-              <div className="flex items-start gap-3">
-                <Brain className="w-5 h-5 text-violet-500 dark:text-violet-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-violet-700 dark:text-violet-300 font-medium leading-relaxed">
-                    &ldquo;{thielQuote}&rdquo;
-                  </p>
-                  <p className="text-xs text-violet-500/70 dark:text-violet-400/60 mt-1 font-semibold">— 피터 틸</p>
-                </div>
+          <div className="mt-3 relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-950/20 border border-amber-200/40 dark:border-amber-800/30">
+            <Quote className="absolute top-3 right-3 w-7 h-7 text-amber-300/40 dark:text-amber-700/40" />
+            <div className="flex items-start gap-3">
+              <div className="w-1 h-10 rounded-full bg-amber-400/60 dark:bg-amber-600/50 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-amber-800 dark:text-amber-200/80 font-medium leading-relaxed italic">
+                  &ldquo;{thielQuote}&rdquo;
+                </p>
+                <p className="text-[10px] text-amber-600/60 dark:text-amber-400/50 mt-1.5 font-bold uppercase tracking-wider">Peter Thiel</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════
-            인지 방패 + 다이어트 상태
-        ═══════════════════════════════════════════════ */}
-        <div className="space-y-3 opacity-0 animate-fade-in-up animation-delay-250">
-          <CognitiveShield
-            currentStreak={streak.currentStreak}
-            totalWorkouts={totalWorkouts}
-            perfectDays={perfectDays}
-          />
-          <DietStatusCard />
-        </div>
-
-        {/* ═══════════════════════════════════════════════
-            진행 상황 요약 카드
-        ═══════════════════════════════════════════════ */}
-        <div className="opacity-0 animate-fade-in-up animation-delay-275">
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-100/80 via-orange-50/60 to-yellow-50/40 dark:from-amber-950/50 dark:via-orange-950/40 dark:to-yellow-950/30 border border-amber-200/50 dark:border-amber-800/30 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-xs font-semibold text-amber-600/70 dark:text-amber-400/70 uppercase tracking-wider">현재 단계</p>
-                <p className="text-lg font-bold text-amber-700 dark:text-amber-300">{currentPhase.name}</p>
-              </div>
-              <Activity className="w-6 h-6 text-amber-500" />
+        {/* 진행 상황 요약 */}
+        <div className="mt-3 p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-[0.15em]">현재 단계</p>
+              <p className="text-base font-bold text-slate-700 dark:text-zinc-300">{currentPhase.name}</p>
             </div>
+            <Activity className="w-5 h-5 text-amber-500" />
+          </div>
 
-            {/* 진행률 바 */}
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-amber-600/70 dark:text-amber-400/70 font-medium">전체 진행</span>
-                  <span className="font-bold text-amber-700 dark:text-amber-300">{progressPercent.toFixed(0)}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-amber-200/50 dark:bg-amber-900/30 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-amber-500 to-orange-400 rounded-full transition-all"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
+          <div className="space-y-2.5">
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-slate-400 dark:text-zinc-500 font-medium">전체 진행</span>
+                <span className="font-bold font-mono text-slate-600 dark:text-zinc-400">{progressPercent.toFixed(0)}%</span>
               </div>
-
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-amber-600/70 dark:text-amber-400/70 font-medium">체중 목표</span>
-                  <span className="font-bold text-amber-700 dark:text-amber-300">{weightLost.toFixed(1)}/{totalWeightToLose.toFixed(1)}kg</span>
-                </div>
-                <div className="h-2 rounded-full bg-amber-200/50 dark:bg-amber-900/30 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all"
-                    style={{ width: `${weightProgress}%` }}
-                  />
-                </div>
+              <div className="h-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 to-orange-400 rounded-full transition-all"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-slate-400 dark:text-zinc-500 font-medium">체중 목표</span>
+                <span className="font-bold font-mono text-slate-600 dark:text-zinc-400">{weightLost.toFixed(1)}/{totalWeightToLose.toFixed(1)}kg</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all"
+                  style={{ width: `${weightProgress}%` }}
+                />
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* ═══════════════════════════════════════════════
-            챌린지 섹션
-        ═══════════════════════════════════════════════ */}
-        <div className="opacity-0 animate-fade-in-up animation-delay-300">
-          {isGamificationLoading ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between mb-2">
-                <SkeletonBox className="h-5 w-24" />
-                <SkeletonBox className="h-4 w-16" />
+      {/* 섹션 디바이더 */}
+      <div className="mx-5 my-4 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-zinc-800 to-transparent" />
+
+      {/* ═══════════════════════════════════════════════
+          SECTION 4: 챌린지
+      ═══════════════════════════════════════════════ */}
+      <div className="px-5 pb-2 opacity-0 animate-fade-in-up animation-delay-300">
+        <SectionLabel icon={Target} label="이번 주 챌린지" accentColor="bg-emerald-500" />
+
+        {isGamificationLoading ? (
+          <div className="space-y-3">
+            <SkeletonCard className="h-20 w-full" />
+            <SkeletonCard className="h-20 w-full" />
+          </div>
+        ) : (
+          <ChallengeList />
+        )}
+      </div>
+
+      {/* 하단 리셋 버튼 */}
+      <div className="flex justify-center py-6 opacity-0 animate-fade-in-up animation-delay-350">
+        <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-3 text-xs text-slate-400 hover:text-slate-600 dark:text-zinc-600 dark:hover:text-zinc-400"
+            >
+              <RotateCcw className="w-3 h-3 mr-1.5" />
+              오늘 기록 초기화
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-xs glass-card border-0">
+            <DialogHeader>
+              <DialogTitle className="text-lg">오늘 기록 초기화</DialogTitle>
+            </DialogHeader>
+            <div className="pt-4 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                오늘의 모든 기록이 초기화됩니다. 계속하시겠습니까?
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setResetDialogOpen(false)}
+                >
+                  취소
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleReset}
+                >
+                  초기화
+                </Button>
               </div>
-              <SkeletonCard className="h-20 w-full" />
-              <SkeletonCard className="h-20 w-full" />
             </div>
-          ) : (
-            <ChallengeList />
-          )}
-        </div>
-
-        {/* 하단 여백 & 초기화 버튼 */}
-        <div className="flex justify-center pt-4 opacity-0 animate-fade-in-up animation-delay-350">
-          <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-3 text-xs text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300"
-              >
-                <RotateCcw className="w-3 h-3 mr-1.5" />
-                오늘 기록 초기화
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-xs glass-card border-0">
-              <DialogHeader>
-                <DialogTitle className="text-lg">오늘 기록 초기화</DialogTitle>
-              </DialogHeader>
-              <div className="pt-4 space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  오늘의 모든 기록이 초기화됩니다. 계속하시겠습니까?
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setResetDialogOpen(false)}
-                  >
-                    취소
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    className="flex-1"
-                    onClick={handleReset}
-                  >
-                    초기화
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
