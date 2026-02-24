@@ -193,6 +193,11 @@ model DietLog {
   dayNumber       Int                                 // 다이어트 N일차
   week            Int                                 // N주차
 
+  // 식사 메뉴 텍스트
+  breakfastMenu   String?                               // 아침 메뉴
+  lunchMenu       String?                               // 점심 메뉴
+  dinnerMenu      String?                               // 저녁 메뉴
+
   // 식사 완료 체크
   breakfastDone   Boolean   @default(false)
   lunchDone       Boolean   @default(false)

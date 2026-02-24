@@ -2,13 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, ClipboardList, Activity, BookOpen, BarChart3, Utensils } from 'lucide-react'
+import { Home, ClipboardList, BookOpen, BarChart3, Utensils, CheckSquare } from 'lucide-react'
 
 const navItems = [
   { href: '/', icon: Home, label: '홈' },
   { href: '/diet', icon: Utensils, label: '식단' },
+  { href: '/routine', icon: CheckSquare, label: '루틴' },
   { href: '/log', icon: ClipboardList, label: '기록' },
-  { href: '/inbody', icon: Activity, label: '인바디' },
   { href: '/stats', icon: BarChart3, label: '통계' },
 ]
 

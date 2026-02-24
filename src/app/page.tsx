@@ -10,7 +10,7 @@ import { useAppStore, PROTEIN_FOODS, WORKOUT_ROUTINE, PHASES, DailyLog } from '@
 import { useGamificationStore } from '@/stores/useGamificationStore'
 import { differenceInDays, format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { Droplets, Utensils, Dumbbell, Trophy, Flame, Target, Activity, Zap, RotateCcw, Settings, Brain, Quote } from 'lucide-react'
+import { Droplets, Utensils, Dumbbell, Trophy, Flame, Target, Zap, RotateCcw, Settings, Brain, Quote } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { DietStatusCard } from '@/components/DietStatusCard'
 import {
@@ -51,7 +51,6 @@ export default function Dashboard() {
   const [proteinDialogOpen, setProteinDialogOpen] = useState(false)
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [celebration, setCelebration] = useState(false)
-  const [latestInbody, setLatestInbody] = useState<{ inbodyScore: number } | null>(null)
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0, todayComplete: false })
   const [totalWorkouts, setTotalWorkouts] = useState(0)
   const [perfectDays, setPerfectDays] = useState(0)
@@ -60,7 +59,6 @@ export default function Dashboard() {
 
   // 로딩 상태 (개별 섹션별)
   const [isConfigLoading, setIsConfigLoading] = useState(true)
-  const [isInbodyLoading, setIsInbodyLoading] = useState(true)
   const [isStreakLoading, setIsStreakLoading] = useState(true)
   const [isGamificationLoading, setIsGamificationLoading] = useState(true)
 
@@ -134,16 +132,6 @@ export default function Dashboard() {
           workoutDone: false,
         })
       }
-
-      fetch('/api/inbody?latest=true')
-        .then(res => res.json())
-        .then(inbodyData => {
-          if (inbodyData?.inbodyScore) {
-            setLatestInbody(inbodyData)
-          }
-        })
-        .catch(() => console.log('No inbody data'))
-        .finally(() => setIsInbodyLoading(false))
 
       const end = new Date()
       const start = new Date()
@@ -334,52 +322,13 @@ export default function Dashboard() {
           })
         }
 
-        const workoutPart = todayWorkout?.toLowerCase() || ''
-        const challengeUpdates: Promise<Response>[] = []
-
-        const challengeRes = await fetch('/api/gamification')
+        // 챌린지 진행 상황 리프레시 (balanced 챌린지는 GET 시 실시간 계산)
+        const challengeRes = await fetch('/api/gamification/challenges')
         const challengeData = await challengeRes.json()
-
-        if (challengeData.userChallenges && Array.isArray(challengeData.userChallenges)) {
-          for (const uc of challengeData.userChallenges) {
-            const challenge = uc.challenge
-            if (!challenge || uc.completed) continue
-
-            let shouldUpdate = false
-
-            if (challenge.key.includes('chest') && (workoutPart.includes('가슴') || workoutPart.includes('chest'))) {
-              shouldUpdate = true
-            } else if (challenge.key.includes('leg') && (workoutPart.includes('하체') || workoutPart.includes('leg'))) {
-              shouldUpdate = true
-            } else if (challenge.key.includes('back') && (workoutPart.includes('등') || workoutPart.includes('back'))) {
-              shouldUpdate = true
-            } else if (challenge.key.includes('workout_5') || challenge.key.includes('workout_7')) {
-              shouldUpdate = true
-            }
-
-            if (shouldUpdate) {
-              challengeUpdates.push(
-                fetch('/api/gamification/challenges', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ challengeId: challenge.id, increment: 1 }),
-                })
-              )
-            }
-          }
-        }
-
-        if (challengeUpdates.length > 0) {
-          await Promise.all(challengeUpdates)
-        }
-
-        const gamificationRes = await fetch('/api/gamification')
-        const gamificationData = await gamificationRes.json()
-        if (gamificationData.activeChallenges) {
-          setActiveChallenges(gamificationData.activeChallenges)
-        }
-        if (gamificationData.userChallenges) {
-          setUserChallenges(gamificationData.userChallenges)
+        if (challengeData.challenges) {
+          setActiveChallenges(challengeData.challenges)
+          const ucs = challengeData.challenges.flatMap((c: { userChallenges: unknown[] }) => c.userChallenges || [])
+          setUserChallenges(ucs)
         }
 
         const end = new Date()

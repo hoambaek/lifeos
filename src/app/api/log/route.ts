@@ -51,7 +51,7 @@ async function updateChallengeProgress(
       }
     } else if (category === 'quest') {
       // 퀘스트 관련 챌린지
-      if (key.includes('water') || key.includes('protein') || key.includes('clean')) {
+      if (key.includes('water') || key.includes('protein')) {
         shouldIncrement = true
       }
     } else if (category === 'mixed') {

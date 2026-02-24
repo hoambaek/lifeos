@@ -13,11 +13,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts'
-import { format, subDays, subWeeks, startOfWeek, endOfWeek } from 'date-fns'
-import { ko } from 'date-fns/locale'
-import { TrendingDown, Target, Flame, Activity, Zap, Droplets } from 'lucide-react'
+import { format, subDays, startOfWeek, endOfWeek } from 'date-fns'
+import { TrendingDown, Target, Flame } from 'lucide-react'
 
 // 스켈레톤 컴포넌트
 const SkeletonBox = ({ className }: { className?: string }) => (
@@ -45,22 +43,11 @@ interface DailyLogData {
   workoutDone: boolean
 }
 
-interface InBodyRecord {
-  id: number
-  date: string
-  weight: number
-  skeletalMuscle: number
-  bodyFatMass: number
-  bodyFatPercent: number
-  inbodyScore: number
-}
-
 type TimeRange = 'week' | 'month' | 'all'
 
 export default function StatsPage() {
   const { config } = useAppStore()
   const [logs, setLogs] = useState<DailyLogData[]>([])
-  const [inbodyRecords, setInbodyRecords] = useState<InBodyRecord[]>([])
   const [timeRange, setTimeRange] = useState<TimeRange>('week')
   const [weeklyStats, setWeeklyStats] = useState({
     water: 0,
@@ -99,14 +86,9 @@ export default function StatsPage() {
             break
         }
 
-        const [logRes, inbodyRes] = await Promise.all([
-          fetch(`/api/log?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`),
-          fetch('/api/inbody'),
-        ])
+        const logRes = await fetch(`/api/log?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`)
         const data = await logRes.json()
-        const inbodyData = await inbodyRes.json()
         setLogs(data || [])
-        setInbodyRecords(inbodyData || [])
 
         // 이번 주 통계 계산
         const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
@@ -147,25 +129,6 @@ export default function StatsPage() {
   const lastWeight = chartData[chartData.length - 1]?.weight || firstWeight
   const weightChange = firstWeight - lastWeight
 
-  // 인바디 차트 데이터 준비
-  const inbodyChartData = inbodyRecords
-    .slice()
-    .reverse()
-    .map((record) => ({
-      date: format(new Date(record.date), 'M/d'),
-      muscle: record.skeletalMuscle,
-      fat: record.bodyFatMass,
-      fatPercent: record.bodyFatPercent,
-      score: record.inbodyScore,
-    }))
-
-  // 인바디 변화 계산
-  const firstInbody = inbodyRecords[inbodyRecords.length - 1]
-  const lastInbody = inbodyRecords[0]
-  const muscleChange = lastInbody && firstInbody ? lastInbody.skeletalMuscle - firstInbody.skeletalMuscle : 0
-  const fatChange = lastInbody && firstInbody ? lastInbody.bodyFatMass - firstInbody.bodyFatMass : 0
-  const fatPercentChange = lastInbody && firstInbody ? lastInbody.bodyFatPercent - firstInbody.bodyFatPercent : 0
-
   // 스켈레톤 로딩 UI
   if (isLoading) {
     return (
@@ -187,21 +150,6 @@ export default function StatsPage() {
             <div className="flex flex-col items-center gap-2">
               <SkeletonBox className="h-4 w-20" />
               <SkeletonBox className="h-8 w-24" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 인바디 지표 변화 스켈레톤 */}
-        <Card>
-          <CardHeader className="pb-2">
-            <SkeletonBox className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <SkeletonBox className="h-56 w-full mb-4" />
-            <div className="grid grid-cols-3 gap-2">
-              <SkeletonBox className="h-20 w-full" />
-              <SkeletonBox className="h-20 w-full" />
-              <SkeletonBox className="h-20 w-full" />
             </div>
           </CardContent>
         </Card>
@@ -263,7 +211,7 @@ export default function StatsPage() {
         <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-200">
           통계
         </h1>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">체중과 체성분 변화를 분석합니다</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">체중과 습관 달성률을 분석합니다</p>
         <hr className="editorial-rule mt-4" />
       </div>
 
@@ -332,150 +280,6 @@ export default function StatsPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* 인바디 지표 변화 그래프 */}
-      {inbodyChartData.length > 0 && (
-        <Card className="border-stone-200 dark:border-stone-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
-              <Activity className="w-4 h-4 text-stone-500" />
-              인바디 지표 변화
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {inbodyChartData.length > 1 ? (
-              <>
-                <div className="h-56 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={inbodyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#D6D3D1" />
-                      <XAxis dataKey="date" fontSize={12} stroke="#78716C" />
-                      <YAxis fontSize={12} stroke="#78716C" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#FAF9F7',
-                          border: '1px solid #D6D3D1',
-                          borderRadius: '8px',
-                          fontFamily: 'var(--font-serif)',
-                        }}
-                      />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="muscle"
-                        stroke="#166534"
-                        strokeWidth={2}
-                        dot={{ fill: '#166534' }}
-                        name="골격근량 (kg)"
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="fat"
-                        stroke="#B45309"
-                        strokeWidth={2}
-                        dot={{ fill: '#B45309' }}
-                        name="체지방량 (kg)"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* 변화 요약 카드 */}
-                <div className="grid grid-cols-3 gap-2 mt-4">
-                  <div className="bg-secondary/50 rounded-lg p-3 text-center">
-                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
-                      <Zap className="w-3 h-3" />
-                      골격근량
-                    </div>
-                    <p className={`text-lg font-bold ${muscleChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {muscleChange >= 0 ? '+' : ''}{muscleChange.toFixed(1)}kg
-                    </p>
-                  </div>
-                  <div className="bg-secondary/50 rounded-lg p-3 text-center">
-                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
-                      <Droplets className="w-3 h-3" />
-                      체지방량
-                    </div>
-                    <p className={`text-lg font-bold ${fatChange <= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {fatChange >= 0 ? '+' : ''}{fatChange.toFixed(1)}kg
-                    </p>
-                  </div>
-                  <div className="bg-secondary/50 rounded-lg p-3 text-center">
-                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
-                      <Target className="w-3 h-3" />
-                      체지방률
-                    </div>
-                    <p className={`text-lg font-bold ${fatPercentChange <= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {fatPercentChange >= 0 ? '+' : ''}{fatPercentChange.toFixed(1)}%
-                    </p>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  인바디 기록이 2개 이상 있어야 변화 추이를 확인할 수 있습니다
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  현재 기록: {inbodyChartData.length}개
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 인바디 점수 추이 */}
-      {inbodyChartData.length > 1 && (
-        <Card className="border-stone-200 dark:border-stone-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-serif flex items-center gap-2 text-stone-800 dark:text-stone-200">
-              <TrendingDown className="w-4 h-4 text-stone-500" />
-              인바디 점수 추이
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-40 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={inbodyChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#D6D3D1" />
-                  <XAxis dataKey="date" fontSize={12} stroke="#78716C" />
-                  <YAxis domain={[0, 100]} fontSize={12} stroke="#78716C" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#FAF9F7',
-                      border: '1px solid #D6D3D1',
-                      borderRadius: '8px',
-                      fontFamily: 'var(--font-serif)',
-                    }}
-                    formatter={(value: number) => [`${value}점`, '인바디 점수']}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="score"
-                    stroke="#92400E"
-                    strokeWidth={3}
-                    dot={{ fill: '#92400E', strokeWidth: 2 }}
-                    name="인바디 점수"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            {lastInbody && firstInbody && (
-              <div className="mt-4 text-center">
-                <p className="text-sm text-muted-foreground">점수 변화</p>
-                <p className={`text-2xl font-bold ${lastInbody.inbodyScore >= firstInbody.inbodyScore ? 'text-green-500' : 'text-red-500'}`}>
-                  {lastInbody.inbodyScore >= firstInbody.inbodyScore ? '+' : ''}
-                  {lastInbody.inbodyScore - firstInbody.inbodyScore}점
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {firstInbody.inbodyScore}점 → {lastInbody.inbodyScore}점
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* 이번 주 습관 달성률 */}
       <Card className="border-stone-200 dark:border-stone-800">

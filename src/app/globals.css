@@ -147,6 +147,11 @@
 }
 
 /* Mobile First Styles */
+html,
+body {
+  overflow-x: hidden;
+}
+
 html {
   font-size: 16px;
   -webkit-tap-highlight-color: transparent;
