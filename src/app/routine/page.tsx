@@ -13,23 +13,23 @@ const ROUTINE_PHASES = [
     title: '기상 직후 90분',
     subtitle: '인지력 극대화',
     emoji: '🌅',
-    timeRange: '07:00–09:00',
+    timeRange: '07:30–09:00',
     items: [
       {
         key: 'wake_sunlight',
-        time: '07:00–07:10',
+        time: '07:30–07:40',
         title: '햇빛 노출',
         desc: '창문 열고 10분 햇빛 쬐기. 몸이 아침이라는 걸 인식하게 해줌',
       },
       {
         key: 'mct_coffee',
-        time: '07:10–07:30',
+        time: '07:40–08:00',
         title: 'MCT 커피',
         desc: '설탕/우유 없이. 뇌에 바로 쓸 수 있는 에너지 공급',
       },
       {
         key: 'deep_work',
-        time: '07:30–09:00',
+        time: '08:00–09:00',
         title: '딥워크',
         desc: '하루 중 집중력 최고 시간. 폰 비행기모드, 핵심 과제 1개만',
       },
