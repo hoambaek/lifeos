@@ -1,18 +1,34 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
 
-const HUB_ROOT = '/Users/hoambaek/Documents/Cursor/hub'
-const TEAM_STATUS_DIR = path.join(HUB_ROOT, 'context/team-status')
-const SHARED_DIR = path.join(HUB_ROOT, 'context/shared')
+const GITHUB_REPO = 'hoambaek/hub'
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || ''
 
-function readMdFiles(dir: string): { name: string; content: string }[] {
+type GitHubFile = { name: string; path: string; download_url: string }
+
+async function fetchGitHubDir(dirPath: string): Promise<{ name: string; content: string }[]> {
   try {
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.md'))
-    return files.map((f) => ({
-      name: f.replace('.md', ''),
-      content: fs.readFileSync(path.join(dir, f), 'utf-8'),
-    }))
+    const headers: Record<string, string> = {
+      'Accept': 'application/vnd.github.v3+json',
+    }
+    if (GITHUB_TOKEN) headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`
+
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO}/contents/${dirPath}`,
+      { headers, next: { revalidate: 300 } } // 5분 캐시
+    )
+    if (!res.ok) return []
+
+    const files: GitHubFile[] = await res.json()
+    const mdFiles = files.filter((f) => f.name.endsWith('.md'))
+
+    const results = await Promise.all(
+      mdFiles.map(async (f) => {
+        const contentRes = await fetch(f.download_url, { next: { revalidate: 300 } })
+        const content = await contentRes.text()
+        return { name: f.name.replace('.md', ''), content }
+      })
+    )
+    return results
   } catch {
     return []
   }
@@ -82,8 +98,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type') || 'deep_work'
 
-  const teamFiles = readMdFiles(TEAM_STATUS_DIR)
-  const sharedFiles = readMdFiles(SHARED_DIR)
+  const [teamFiles, sharedFiles] = await Promise.all([
+    fetchGitHubDir('context/team-status'),
+    fetchGitHubDir('context/shared'),
+  ])
 
   const allTasks: { team: string; task: string; priority: 'high' | 'medium' | 'low' }[] = []
   const allIssues: { team: string; issue: string }[] = []
@@ -181,7 +199,6 @@ export async function GET(request: Request) {
       break
   }
 
-  // 빈 섹션 제거
   recommendations = recommendations.filter((r) => r.items.length > 0)
 
   return NextResponse.json({ type, recommendations })
