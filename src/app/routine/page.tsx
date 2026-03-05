@@ -629,9 +629,6 @@ export default function RoutinePage() {
               })}
             </div>
 
-            {phaseIdx < ROUTINE_PHASES.length - 1 && (
-              <hr className="editorial-rule mt-8" />
-            )}
           </section>
         ))}
       </div>
