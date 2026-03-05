@@ -174,6 +174,32 @@ const RECOMMEND_KEYS = new Set(['deep_work', 'reactive_work', 'skill_work', 'bra
 type RecommendItem = { team: string; text: string }
 type RecommendSection = { label: string; items: RecommendItem[] }
 
+const TEAM_COLORS: Record<string, { bg: string; text: string; darkBg: string; darkText: string }> = {
+  '특허':       { bg: 'bg-rose-100',    text: 'text-rose-700',    darkBg: 'dark:bg-rose-900/40',    darkText: 'dark:text-rose-300' },
+  '지원사업':   { bg: 'bg-orange-100',  text: 'text-orange-700',  darkBg: 'dark:bg-orange-900/40',  darkText: 'dark:text-orange-300' },
+  '프리베태그': { bg: 'bg-violet-100',  text: 'text-violet-700',  darkBg: 'dark:bg-violet-900/40',  darkText: 'dark:text-violet-300' },
+  '뮤즈드마레': { bg: 'bg-pink-100',    text: 'text-pink-700',    darkBg: 'dark:bg-pink-900/40',    darkText: 'dark:text-pink-300' },
+  '마케팅':     { bg: 'bg-cyan-100',    text: 'text-cyan-700',    darkBg: 'dark:bg-cyan-900/40',    darkText: 'dark:text-cyan-300' },
+  '브랜드디자인': { bg: 'bg-fuchsia-100', text: 'text-fuchsia-700', darkBg: 'dark:bg-fuchsia-900/40', darkText: 'dark:text-fuchsia-300' },
+  '투자유치':   { bg: 'bg-blue-100',    text: 'text-blue-700',    darkBg: 'dark:bg-blue-900/40',    darkText: 'dark:text-blue-300' },
+  '싱가폴':     { bg: 'bg-teal-100',    text: 'text-teal-700',    darkBg: 'dark:bg-teal-900/40',    darkText: 'dark:text-teal-300' },
+  'R&D':        { bg: 'bg-indigo-100',  text: 'text-indigo-700',  darkBg: 'dark:bg-indigo-900/40',  darkText: 'dark:text-indigo-300' },
+  '경영':       { bg: 'bg-amber-100',   text: 'text-amber-700',   darkBg: 'dark:bg-amber-900/40',   darkText: 'dark:text-amber-300' },
+  '전사':       { bg: 'bg-emerald-100', text: 'text-emerald-700', darkBg: 'dark:bg-emerald-900/40', darkText: 'dark:text-emerald-300' },
+}
+
+function getTeamColorClass(team: string, selected?: boolean) {
+  const c = TEAM_COLORS[team]
+  if (selected) {
+    return c
+      ? `${c.bg}/60 ${c.text} ${c.darkBg} ${c.darkText}`
+      : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
+  }
+  return c
+    ? `${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`
+    : 'bg-amber-100 text-amber-500 dark:bg-amber-900/40 dark:text-amber-500'
+}
+
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
 export default function RoutinePage() {
@@ -513,7 +539,7 @@ export default function RoutinePage() {
                                     className={`inline-flex items-center text-[10px] px-2 py-0.5 rounded-full ${
                                       done
                                         ? 'bg-emerald-100/50 dark:bg-emerald-900/20 text-emerald-500/60 dark:text-emerald-500/40'
-                                        : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400'
+                                        : getTeamColorClass(t.team, true)
                                     }`}
                                   >
                                     {t.team} · {t.text}
@@ -577,7 +603,7 @@ export default function RoutinePage() {
                                         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5 ${
                                           isSelected
                                             ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40'
-                                            : 'text-amber-500 dark:text-amber-500 bg-amber-100 dark:bg-amber-900/40'
+                                            : getTeamColorClass(rec.team)
                                         }`}>
                                           {isSelected ? '✓ ' : ''}{rec.team}
                                         </span>
