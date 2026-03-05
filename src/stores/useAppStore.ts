@@ -53,6 +53,45 @@ export const WORKOUT_ROUTINE: Record<number, string> = {
   6: '등/이두',        // 토요일
 }
 
+// 부위별 운동 세부 동작 (덤벨 + TRX 홈짐)
+export interface WorkoutExercise {
+  name: string
+  sets: number
+  reps: string
+  equipment: '덤벨' | 'TRX' | '맨몸'
+}
+
+export const WORKOUT_DETAILS: Record<string, WorkoutExercise[]> = {
+  '가슴/삼두': [
+    { name: '덤벨 플로어프레스', sets: 4, reps: '10-12회', equipment: '덤벨' },
+    { name: '덤벨 플라이', sets: 3, reps: '12회', equipment: '덤벨' },
+    { name: 'TRX 푸쉬업', sets: 3, reps: '12-15회', equipment: 'TRX' },
+    { name: '덤벨 오버헤드 트라이셉스', sets: 3, reps: '12회', equipment: '덤벨' },
+    { name: 'TRX 트라이셉스 익스텐션', sets: 3, reps: '10-12회', equipment: 'TRX' },
+  ],
+  '등/이두': [
+    { name: '덤벨 원암 로우', sets: 4, reps: '10-12회', equipment: '덤벨' },
+    { name: 'TRX 로우', sets: 3, reps: '12-15회', equipment: 'TRX' },
+    { name: '덤벨 풀오버', sets: 3, reps: '12회', equipment: '덤벨' },
+    { name: '덤벨 바이셉스 컬', sets: 3, reps: '12회', equipment: '덤벨' },
+    { name: '덤벨 해머컬', sets: 3, reps: '10-12회', equipment: '덤벨' },
+  ],
+  '하체': [
+    { name: '덤벨 고블릿 스쿼트', sets: 4, reps: '12회', equipment: '덤벨' },
+    { name: '덤벨 런지', sets: 3, reps: '좌우 10회', equipment: '덤벨' },
+    { name: '덤벨 루마니안 데드리프트', sets: 3, reps: '12회', equipment: '덤벨' },
+    { name: 'TRX 피스톨 스쿼트', sets: 3, reps: '좌우 8회', equipment: 'TRX' },
+    { name: '덤벨 카프레이즈', sets: 3, reps: '15-20회', equipment: '덤벨' },
+  ],
+  '어깨/복근': [
+    { name: '덤벨 숄더프레스', sets: 4, reps: '10-12회', equipment: '덤벨' },
+    { name: '덤벨 래터럴레이즈', sets: 3, reps: '12-15회', equipment: '덤벨' },
+    { name: '덤벨 프론트레이즈', sets: 3, reps: '12회', equipment: '덤벨' },
+    { name: 'TRX 파이크', sets: 3, reps: '10-12회', equipment: 'TRX' },
+    { name: 'TRX 폴아웃', sets: 3, reps: '10-12회', equipment: 'TRX' },
+  ],
+}
+
 // 단계 정보
 export const PHASES = [
   { week: [1, 4], name: '1단계', description: '적응 구간' },

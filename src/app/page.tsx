@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useAppStore, PROTEIN_FOODS, WORKOUT_ROUTINE, PHASES, DailyLog } from '@/stores/useAppStore'
+import { useAppStore, PROTEIN_FOODS, WORKOUT_ROUTINE, WORKOUT_DETAILS, PHASES, DailyLog } from '@/stores/useAppStore'
 import { useGamificationStore } from '@/stores/useGamificationStore'
 import { differenceInDays, format } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -608,6 +608,42 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* 운동 세부 동작 */}
+        {todayWorkout !== '휴식' && WORKOUT_DETAILS[todayWorkout] && (
+          <div className="mt-4 rounded-xl border border-border bg-card p-4">
+            <p className="editorial-label mb-3">운동 목록</p>
+            <div className="space-y-2.5">
+              {WORKOUT_DETAILS[todayWorkout].map((ex, i) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold ${
+                      ex.equipment === '덤벨' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                      : ex.equipment === 'TRX' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                      : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
+                    }`}>
+                      {ex.equipment === '덤벨' ? 'D' : ex.equipment === 'TRX' ? 'T' : 'B'}
+                    </span>
+                    <span className="text-stone-800 dark:text-stone-200">{ex.name}</span>
+                  </div>
+                  <span className="text-stone-500 dark:text-stone-400 text-xs font-mono">
+                    {ex.sets}×{ex.reps}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="text-[11px] text-stone-500">덤벨</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-purple-500" />
+                <span className="text-[11px] text-stone-500">TRX</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 물 + 단백질 */}
         <div className="grid grid-cols-2 gap-4 mt-4">
