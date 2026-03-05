@@ -169,6 +169,24 @@ const ROUTINE_PHASES = [
 
 const ALL_KEYS = ROUTINE_PHASES.flatMap((p) => p.items.map((i) => i.key))
 
+// 시간 문자열에서 시작 시간(분)을 추출
+function parseStartMinutes(time: string): number {
+  const match = time.match(/(\d{1,2}):(\d{2})/)
+  if (!match) return -1
+  return parseInt(match[1]) * 60 + parseInt(match[2])
+}
+
+// 시간 문자열에서 종료 시간(분)을 추출
+function parseEndMinutes(time: string): number {
+  const parts = time.split('–')
+  if (parts.length === 2) {
+    const match = parts[1].match(/(\d{1,2}):(\d{2})/)
+    if (match) return parseInt(match[1]) * 60 + parseInt(match[2])
+  }
+  // 단일 시간인 경우 시작시간 + 10분
+  return parseStartMinutes(time) + 10
+}
+
 const RECOMMEND_KEYS = new Set(['deep_work', 'reactive_work', 'skill_work', 'brain_log'])
 
 type RecommendItem = { team: string; text: string }
@@ -213,8 +231,22 @@ export default function RoutinePage() {
   const [recommendData, setRecommendData] = useState<RecommendSection[]>([])
   const [recommendLoading, setRecommendLoading] = useState(false)
   const [selectedTasks, setSelectedTasks] = useState<Record<string, { team: string; text: string }[]>>({})
+  const [nowMinutes, setNowMinutes] = useState(() => {
+    const now = new Date()
+    return now.getHours() * 60 + now.getMinutes()
+  })
+
+  // 1분마다 현재 시간 업데이트
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date()
+      setNowMinutes(now.getHours() * 60 + now.getMinutes())
+    }, 60000)
+    return () => clearInterval(timer)
+  }, [])
 
   const dateStr = format(currentDate, 'yyyy-MM-dd')
+  const isViewingToday = isToday(currentDate)
 
   // ── 데이터 로드 ──────────────────────────────────────────────────────────────
   const loadRoutineData = useCallback(async (date: Date) => {
@@ -477,12 +509,40 @@ export default function RoutinePage() {
             <SectionHeader title={`${phase.emoji} ${phase.title}`} label={phase.phase} timeRange={phase.timeRange} />
 
             <div className="space-y-3">
-              {phase.items.map((item) => {
+              {phase.items.map((item, itemIdx) => {
                 const done = completedItems.has(item.key)
                 const hasRecommend = RECOMMEND_KEYS.has(item.key)
 
+                // 현재 시간 라인: 이 아이템의 시간 범위 내에 현재 시간이 있으면 위에 표시
+                const itemStart = parseStartMinutes(item.time)
+                const itemEnd = parseEndMinutes(item.time)
+                const nextItem = phase.items[itemIdx + 1]
+                const nextStart = nextItem ? parseStartMinutes(nextItem.time) : itemEnd
+
+                // 이 아이템 위에 라인 표시: 현재 시간이 이전 아이템 끝 ~ 이 아이템 시작 사이
+                const prevItem = phase.items[itemIdx - 1]
+                const prevEnd = prevItem ? parseEndMinutes(prevItem.time) : parseStartMinutes(phase.timeRange)
+                const showLineBefore = isViewingToday && itemIdx === 0 && phaseIdx === 0
+                  ? nowMinutes < itemStart
+                  : isViewingToday && nowMinutes >= prevEnd && nowMinutes < itemStart
+
+                // 이 아이템 아래에 라인 표시: 현재 시간이 이 아이템 범위 내
+                const showLineInside = isViewingToday && nowMinutes >= itemStart && nowMinutes < (nextItem ? nextStart : itemEnd)
+
+                // 마지막 아이템 뒤에 라인 표시
+                const showLineAfter = isViewingToday && !nextItem && nowMinutes >= itemEnd && nowMinutes < (parseEndMinutes(phase.timeRange) || itemEnd + 30)
+
                 return (
                   <div key={item.key}>
+                    {showLineBefore && (
+                      <div className="flex items-center gap-2 py-1 mb-3">
+                        <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                        <div className="flex-1 h-px bg-red-500" />
+                        <span className="text-[10px] font-mono text-red-500 flex-shrink-0">
+                          {`${Math.floor(nowMinutes / 60).toString().padStart(2, '0')}:${(nowMinutes % 60).toString().padStart(2, '0')}`}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <button
                         onClick={() => toggleItem(item.key)}
@@ -622,6 +682,16 @@ export default function RoutinePage() {
                             ))}
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {(showLineInside || showLineAfter) && (
+                      <div className="flex items-center gap-2 py-1 mt-3">
+                        <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                        <div className="flex-1 h-px bg-red-500" />
+                        <span className="text-[10px] font-mono text-red-500 flex-shrink-0">
+                          {`${Math.floor(nowMinutes / 60).toString().padStart(2, '0')}:${(nowMinutes % 60).toString().padStart(2, '0')}`}
+                        </span>
                       </div>
                     )}
                   </div>
