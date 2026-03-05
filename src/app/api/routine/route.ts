@@ -8,6 +8,7 @@ async function ensureTable() {
         "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         "date" TEXT NOT NULL,
         "completedItems" TEXT NOT NULL DEFAULT '[]',
+        "selectedTasks" TEXT NOT NULL DEFAULT '{}',
         "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
@@ -15,8 +16,12 @@ async function ensureTable() {
     await prisma.$executeRawUnsafe(`
       CREATE UNIQUE INDEX IF NOT EXISTS "RoutineLog_date_key" ON "RoutineLog"("date")
     `)
+    // 기존 테이블에 selectedTasks 컬럼이 없으면 추가
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "RoutineLog" ADD COLUMN "selectedTasks" TEXT NOT NULL DEFAULT '{}'
+    `)
   } catch {
-    // Table or index may already exist
+    // Table, index, or column may already exist
   }
 }
 
@@ -31,17 +36,18 @@ export async function GET(request: Request) {
 
   try {
     const records = await prisma.$queryRawUnsafe<
-      Array<{ id: number; date: string; completedItems: string; createdAt: string; updatedAt: string }>
+      Array<{ id: number; date: string; completedItems: string; selectedTasks?: string; createdAt: string; updatedAt: string }>
     >(`SELECT * FROM "RoutineLog" WHERE "date" = ?`, date)
 
     if (!records || records.length === 0) {
-      return NextResponse.json({ date, completedItems: [] })
+      return NextResponse.json({ date, completedItems: [], selectedTasks: {} })
     }
 
     const record = records[0]
     return NextResponse.json({
       ...record,
       completedItems: JSON.parse(record.completedItems),
+      selectedTasks: record.selectedTasks ? JSON.parse(record.selectedTasks) : {},
     })
   } catch (error) {
     console.error('Failed to fetch routine log:', error)
@@ -54,28 +60,31 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { date, completedItems } = body
+    const { date, completedItems, selectedTasks } = body
 
     if (!date) {
       return NextResponse.json({ error: 'Date required' }, { status: 400 })
     }
 
     const completedJson = JSON.stringify(completedItems || [])
+    const selectedJson = JSON.stringify(selectedTasks || {})
     const now = new Date().toISOString()
 
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "RoutineLog" ("date", "completedItems", "createdAt", "updatedAt")
-       VALUES (?, ?, ?, ?)
+      `INSERT INTO "RoutineLog" ("date", "completedItems", "selectedTasks", "createdAt", "updatedAt")
+       VALUES (?, ?, ?, ?, ?)
        ON CONFLICT("date") DO UPDATE SET
          "completedItems" = excluded."completedItems",
+         "selectedTasks" = excluded."selectedTasks",
          "updatedAt" = excluded."updatedAt"`,
       date,
       completedJson,
+      selectedJson,
       now,
       now
     )
 
-    return NextResponse.json({ date, completedItems })
+    return NextResponse.json({ date, completedItems, selectedTasks })
   } catch (error) {
     console.error('Failed to save routine log:', error)
     return NextResponse.json({ error: 'Failed to save' }, { status: 500 })

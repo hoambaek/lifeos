@@ -186,6 +186,7 @@ export default function RoutinePage() {
   const [recommendOpen, setRecommendOpen] = useState<string | null>(null)
   const [recommendData, setRecommendData] = useState<RecommendSection[]>([])
   const [recommendLoading, setRecommendLoading] = useState(false)
+  const [selectedTasks, setSelectedTasks] = useState<Record<string, { team: string; text: string }[]>>({})
 
   const dateStr = format(currentDate, 'yyyy-MM-dd')
 
@@ -200,8 +201,10 @@ export default function RoutinePage() {
       } else {
         setCompletedItems(new Set())
       }
+      setSelectedTasks(data?.selectedTasks || {})
     } catch {
       setCompletedItems(new Set())
+      setSelectedTasks({})
     } finally {
       setIsLoading(false)
     }
@@ -225,12 +228,12 @@ export default function RoutinePage() {
   }, [completedItems, allCompleted])
 
   // ── 저장 ─────────────────────────────────────────────────────────────────────
-  const saveToServer = useCallback(async (date: string, items: string[]) => {
+  const saveToServer = useCallback(async (date: string, items: string[], tasks?: Record<string, { team: string; text: string }[]>) => {
     try {
       await fetch('/api/routine', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, completedItems: items }),
+        body: JSON.stringify({ date, completedItems: items, selectedTasks: tasks }),
       })
     } catch {
       // silent
@@ -250,13 +253,13 @@ export default function RoutinePage() {
 
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
         saveTimeoutRef.current = setTimeout(() => {
-          saveToServer(dateStr, Array.from(next))
+          saveToServer(dateStr, Array.from(next), selectedTasks)
         }, 500)
 
         return next
       })
     },
-    [dateStr, saveToServer]
+    [dateStr, saveToServer, selectedTasks]
   )
 
   // ── 추천 로드 ──────────────────────────────────────────────────────────────────
@@ -277,6 +280,26 @@ export default function RoutinePage() {
       setRecommendLoading(false)
     }
   }, [recommendOpen])
+
+  // ── 추천 항목 선택 ──────────────────────────────────────────────────────────────
+  const selectRecommendTask = useCallback((routineKey: string, task: { team: string; text: string }) => {
+    setSelectedTasks((prev) => {
+      const existing = prev[routineKey] || []
+      const alreadySelected = existing.some((t) => t.text === task.text && t.team === task.team)
+      let updated: Record<string, { team: string; text: string }[]>
+      if (alreadySelected) {
+        updated = { ...prev, [routineKey]: existing.filter((t) => !(t.text === task.text && t.team === task.team)) }
+      } else {
+        updated = { ...prev, [routineKey]: [...existing, task] }
+      }
+      // 저장
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = setTimeout(() => {
+        saveToServer(dateStr, Array.from(completedItems), updated)
+      }, 500)
+      return updated
+    })
+  }, [dateStr, saveToServer, completedItems])
 
   // ── 날짜 이동 ─────────────────────────────────────────────────────────────────
   const goToPrevDay = () => setCurrentDate((prev) => subDays(prev, 1))
@@ -482,6 +505,22 @@ export default function RoutinePage() {
                             >
                               {item.desc}
                             </p>
+                            {selectedTasks[item.key]?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {selectedTasks[item.key].map((t, tIdx) => (
+                                  <span
+                                    key={tIdx}
+                                    className={`inline-flex items-center text-[10px] px-2 py-0.5 rounded-full ${
+                                      done
+                                        ? 'bg-emerald-100/50 dark:bg-emerald-900/20 text-emerald-500/60 dark:text-emerald-500/40'
+                                        : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400'
+                                    }`}
+                                  >
+                                    {t.team} · {t.text}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </button>
@@ -521,16 +560,37 @@ export default function RoutinePage() {
                                   {section.label}
                                 </p>
                                 <div className="space-y-1">
-                                  {section.items.map((rec, rIdx) => (
-                                    <div key={rIdx} className="flex items-start gap-2">
-                                      <span className="text-[10px] font-medium text-amber-500 dark:text-amber-500 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">
-                                        {rec.team}
-                                      </span>
-                                      <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
-                                        {rec.text}
-                                      </p>
-                                    </div>
-                                  ))}
+                                  {section.items.map((rec, rIdx) => {
+                                    const isSelected = (selectedTasks[item.key] || []).some(
+                                      (t) => t.text === rec.text && t.team === rec.team
+                                    )
+                                    return (
+                                      <button
+                                        key={rIdx}
+                                        onClick={() => selectRecommendTask(item.key, rec)}
+                                        className={`w-full flex items-start gap-2 p-1.5 rounded-lg transition-colors text-left ${
+                                          isSelected
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/30'
+                                            : 'hover:bg-amber-100/50 dark:hover:bg-amber-900/20'
+                                        }`}
+                                      >
+                                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5 ${
+                                          isSelected
+                                            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40'
+                                            : 'text-amber-500 dark:text-amber-500 bg-amber-100 dark:bg-amber-900/40'
+                                        }`}>
+                                          {isSelected ? '✓ ' : ''}{rec.team}
+                                        </span>
+                                        <p className={`text-xs leading-relaxed ${
+                                          isSelected
+                                            ? 'text-emerald-700 dark:text-emerald-300'
+                                            : 'text-stone-700 dark:text-stone-300'
+                                        }`}>
+                                          {rec.text}
+                                        </p>
+                                      </button>
+                                    )
+                                  })}
                                 </div>
                               </div>
                             ))}
