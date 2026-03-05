@@ -236,6 +236,7 @@ export default function RoutinePage() {
   const [showCelebration, setShowCelebration] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timeLineRef = useRef<HTMLDivElement>(null)
   const [recommendOpen, setRecommendOpen] = useState<string | null>(null)
   const [recommendData, setRecommendData] = useState<RecommendSection[]>([])
   const [recommendLoading, setRecommendLoading] = useState(false)
@@ -253,6 +254,16 @@ export default function RoutinePage() {
     }, 60000)
     return () => clearInterval(timer)
   }, [])
+
+  // 페이지 로드 시 현재 시간 라인으로 스크롤
+  useEffect(() => {
+    if (isToday(currentDate) && !isLoading) {
+      const timer = setTimeout(() => {
+        timeLineRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [currentDate, isLoading])
 
   const dateStr = format(currentDate, 'yyyy-MM-dd')
   const isViewingToday = isToday(currentDate)
@@ -670,7 +681,7 @@ export default function RoutinePage() {
                     )}
 
                     {showLineAfter && (
-                      <div className="flex items-center gap-2 py-1 mt-3">
+                      <div ref={timeLineRef} className="flex items-center gap-2 py-1 mt-3">
                         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
                         <div className="flex-1 h-px bg-red-500/70" />
                         <span className="text-[10px] font-mono text-red-500 font-semibold flex-shrink-0">
