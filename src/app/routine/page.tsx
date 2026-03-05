@@ -176,15 +176,24 @@ function parseStartMinutes(time: string): number {
   return parseInt(match[1]) * 60 + parseInt(match[2])
 }
 
-// 시간 문자열에서 종료 시간(분)을 추출
-function parseEndMinutes(time: string): number {
-  const parts = time.split('–')
-  if (parts.length === 2) {
-    const match = parts[1].match(/(\d{1,2}):(\d{2})/)
-    if (match) return parseInt(match[1]) * 60 + parseInt(match[2])
+// 모든 아이템을 시간순으로 플랫하게 펼침
+const ALL_ITEMS_FLAT = ROUTINE_PHASES.flatMap((p) =>
+  p.items.map((item) => ({ key: item.key, startMin: parseStartMinutes(item.time) }))
+)
+
+// 현재 시간 라인을 표시할 아이템 key 반환 (해당 아이템 뒤에 라인 표시)
+function getCurrentTimeItemKey(nowMin: number): string | null {
+  // 첫 아이템 시작 전이면 첫 아이템 앞에 (특수 처리)
+  if (ALL_ITEMS_FLAT.length === 0) return null
+  if (nowMin < ALL_ITEMS_FLAT[0].startMin) return '__before_first__'
+
+  // 현재 시간 이하인 마지막 아이템을 찾음
+  for (let i = ALL_ITEMS_FLAT.length - 1; i >= 0; i--) {
+    if (nowMin >= ALL_ITEMS_FLAT[i].startMin) {
+      return ALL_ITEMS_FLAT[i].key
+    }
   }
-  // 단일 시간인 경우 시작시간 + 10분
-  return parseStartMinutes(time) + 10
+  return null
 }
 
 const RECOMMEND_KEYS = new Set(['deep_work', 'reactive_work', 'skill_work', 'brain_log'])
@@ -509,40 +518,15 @@ export default function RoutinePage() {
             <SectionHeader title={`${phase.emoji} ${phase.title}`} label={phase.phase} timeRange={phase.timeRange} />
 
             <div className="space-y-3">
-              {phase.items.map((item, itemIdx) => {
+              {phase.items.map((item) => {
                 const done = completedItems.has(item.key)
                 const hasRecommend = RECOMMEND_KEYS.has(item.key)
-
-                // 현재 시간 라인: 이 아이템의 시간 범위 내에 현재 시간이 있으면 위에 표시
-                const itemStart = parseStartMinutes(item.time)
-                const itemEnd = parseEndMinutes(item.time)
-                const nextItem = phase.items[itemIdx + 1]
-                const nextStart = nextItem ? parseStartMinutes(nextItem.time) : itemEnd
-
-                // 이 아이템 위에 라인 표시: 현재 시간이 이전 아이템 끝 ~ 이 아이템 시작 사이
-                const prevItem = phase.items[itemIdx - 1]
-                const prevEnd = prevItem ? parseEndMinutes(prevItem.time) : parseStartMinutes(phase.timeRange)
-                const showLineBefore = isViewingToday && itemIdx === 0 && phaseIdx === 0
-                  ? nowMinutes < itemStart
-                  : isViewingToday && nowMinutes >= prevEnd && nowMinutes < itemStart
-
-                // 이 아이템 아래에 라인 표시: 현재 시간이 이 아이템 범위 내
-                const showLineInside = isViewingToday && nowMinutes >= itemStart && nowMinutes < (nextItem ? nextStart : itemEnd)
-
-                // 마지막 아이템 뒤에 라인 표시
-                const showLineAfter = isViewingToday && !nextItem && nowMinutes >= itemEnd && nowMinutes < (parseEndMinutes(phase.timeRange) || itemEnd + 30)
+                const timeLineKey = isViewingToday ? getCurrentTimeItemKey(nowMinutes) : null
+                const showLineAfter = timeLineKey === item.key
+                const nowLabel = `${Math.floor(nowMinutes / 60).toString().padStart(2, '0')}:${(nowMinutes % 60).toString().padStart(2, '0')}`
 
                 return (
                   <div key={item.key}>
-                    {showLineBefore && (
-                      <div className="flex items-center gap-2 py-1 mb-3">
-                        <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                        <div className="flex-1 h-px bg-red-500" />
-                        <span className="text-[10px] font-mono text-red-500 flex-shrink-0">
-                          {`${Math.floor(nowMinutes / 60).toString().padStart(2, '0')}:${(nowMinutes % 60).toString().padStart(2, '0')}`}
-                        </span>
-                      </div>
-                    )}
                     <div className="flex gap-2">
                       <button
                         onClick={() => toggleItem(item.key)}
@@ -685,12 +669,12 @@ export default function RoutinePage() {
                       </div>
                     )}
 
-                    {(showLineInside || showLineAfter) && (
+                    {showLineAfter && (
                       <div className="flex items-center gap-2 py-1 mt-3">
-                        <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                        <div className="flex-1 h-px bg-red-500" />
-                        <span className="text-[10px] font-mono text-red-500 flex-shrink-0">
-                          {`${Math.floor(nowMinutes / 60).toString().padStart(2, '0')}:${(nowMinutes % 60).toString().padStart(2, '0')}`}
+                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                        <div className="flex-1 h-px bg-red-500/70" />
+                        <span className="text-[10px] font-mono text-red-500 font-semibold flex-shrink-0">
+                          {nowLabel}
                         </span>
                       </div>
                     )}
