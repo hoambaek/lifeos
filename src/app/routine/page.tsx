@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { format, addDays, subDays, isToday } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Brain } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Brain, Lightbulb, X } from 'lucide-react'
 
 // ─── 루틴 데이터 ───────────────────────────────────────────────────────────────
 
@@ -169,6 +169,11 @@ const ROUTINE_PHASES = [
 
 const ALL_KEYS = ROUTINE_PHASES.flatMap((p) => p.items.map((i) => i.key))
 
+const RECOMMEND_KEYS = new Set(['deep_work', 'reactive_work', 'skill_work', 'brain_log'])
+
+type RecommendItem = { team: string; text: string }
+type RecommendSection = { label: string; items: RecommendItem[] }
+
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
 export default function RoutinePage() {
@@ -178,6 +183,9 @@ export default function RoutinePage() {
   const [showCelebration, setShowCelebration] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [recommendOpen, setRecommendOpen] = useState<string | null>(null)
+  const [recommendData, setRecommendData] = useState<RecommendSection[]>([])
+  const [recommendLoading, setRecommendLoading] = useState(false)
 
   const dateStr = format(currentDate, 'yyyy-MM-dd')
 
@@ -250,6 +258,25 @@ export default function RoutinePage() {
     },
     [dateStr, saveToServer]
   )
+
+  // ── 추천 로드 ──────────────────────────────────────────────────────────────────
+  const loadRecommend = useCallback(async (type: string) => {
+    if (recommendOpen === type) {
+      setRecommendOpen(null)
+      return
+    }
+    setRecommendOpen(type)
+    setRecommendLoading(true)
+    try {
+      const res = await fetch(`/api/routine/recommend?type=${type}`)
+      const data = await res.json()
+      setRecommendData(data.recommendations || [])
+    } catch {
+      setRecommendData([])
+    } finally {
+      setRecommendLoading(false)
+    }
+  }, [recommendOpen])
 
   // ── 날짜 이동 ─────────────────────────────────────────────────────────────────
   const goToPrevDay = () => setCurrentDate((prev) => subDays(prev, 1))
@@ -403,62 +430,115 @@ export default function RoutinePage() {
             <div className="space-y-3">
               {phase.items.map((item) => {
                 const done = completedItems.has(item.key)
+                const hasRecommend = RECOMMEND_KEYS.has(item.key)
 
                 return (
-                  <button
-                    key={item.key}
-                    onClick={() => toggleItem(item.key)}
-                    disabled={isLoading}
-                    className={`w-full text-left p-4 rounded-2xl border transition-colors ${
-                      done
-                        ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200/60 dark:border-emerald-800/40'
-                        : 'bg-card border-border hover:border-stone-300 dark:hover:border-stone-600 hover:shadow-sm'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* 체크 아이콘 */}
-                      <div className="mt-0.5 flex-shrink-0">
-                        {done ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <div key={item.key}>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => toggleItem(item.key)}
+                        disabled={isLoading}
+                        className={`flex-1 text-left p-4 rounded-2xl border transition-colors ${
+                          done
+                            ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200/60 dark:border-emerald-800/40'
+                            : 'bg-card border-border hover:border-stone-300 dark:hover:border-stone-600 hover:shadow-sm'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 flex-shrink-0">
+                            {done ? (
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-stone-300 dark:text-stone-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="mb-0.5">
+                              <span
+                                className={`font-mono text-[10px] font-semibold tracking-wider uppercase ${
+                                  done
+                                    ? 'text-emerald-500 dark:text-emerald-500'
+                                    : 'text-stone-400 dark:text-stone-500'
+                                }`}
+                              >
+                                {item.time}
+                              </span>
+                            </div>
+                            <p
+                              className={`font-semibold text-sm leading-snug transition-all duration-300 ${
+                                done
+                                  ? 'text-stone-400 dark:text-stone-500 line-through decoration-stone-300 dark:decoration-stone-600'
+                                  : 'text-stone-900 dark:text-stone-100'
+                              }`}
+                            >
+                              {item.title}
+                            </p>
+                            <p
+                              className={`text-xs mt-0.5 leading-relaxed transition-all duration-300 ${
+                                done
+                                  ? 'text-stone-300 dark:text-stone-600'
+                                  : 'text-stone-500 dark:text-stone-400'
+                              }`}
+                            >
+                              {item.desc}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+
+                      {hasRecommend && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            loadRecommend(item.key)
+                          }}
+                          className={`flex-shrink-0 w-10 flex items-center justify-center rounded-2xl border transition-colors ${
+                            recommendOpen === item.key
+                              ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+                              : 'bg-card border-border hover:border-stone-300 dark:hover:border-stone-600'
+                          }`}
+                        >
+                          {recommendOpen === item.key ? (
+                            <X className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                          ) : (
+                            <Lightbulb className="w-4 h-4 text-stone-400 dark:text-stone-500" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+
+                    {recommendOpen === item.key && (
+                      <div className="mt-2 p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40">
+                        {recommendLoading ? (
+                          <p className="text-xs text-stone-400 dark:text-stone-500">불러오는 중...</p>
+                        ) : recommendData.length === 0 ? (
+                          <p className="text-xs text-stone-400 dark:text-stone-500">추천 항목이 없습니다</p>
                         ) : (
-                          <Circle className="w-5 h-5 text-stone-300 dark:text-stone-600" />
+                          <div className="space-y-3">
+                            {recommendData.map((section, sIdx) => (
+                              <div key={sIdx}>
+                                <p className="font-mono text-[10px] font-semibold tracking-wider text-amber-600 dark:text-amber-400 uppercase mb-1.5">
+                                  {section.label}
+                                </p>
+                                <div className="space-y-1">
+                                  {section.items.map((rec, rIdx) => (
+                                    <div key={rIdx} className="flex items-start gap-2">
+                                      <span className="text-[10px] font-medium text-amber-500 dark:text-amber-500 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">
+                                        {rec.team}
+                                      </span>
+                                      <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
+                                        {rec.text}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
-
-                      {/* 내용 */}
-                      <div className="flex-1 min-w-0">
-                        <div className="mb-0.5">
-                          <span
-                            className={`font-mono text-[10px] font-semibold tracking-wider uppercase ${
-                              done
-                                ? 'text-emerald-500 dark:text-emerald-500'
-                                : 'text-stone-400 dark:text-stone-500'
-                            }`}
-                          >
-                            {item.time}
-                          </span>
-                        </div>
-                        <p
-                          className={`font-semibold text-sm leading-snug transition-all duration-300 ${
-                            done
-                              ? 'text-stone-400 dark:text-stone-500 line-through decoration-stone-300 dark:decoration-stone-600'
-                              : 'text-stone-900 dark:text-stone-100'
-                          }`}
-                        >
-                          {item.title}
-                        </p>
-                        <p
-                          className={`text-xs mt-0.5 leading-relaxed transition-all duration-300 ${
-                            done
-                              ? 'text-stone-300 dark:text-stone-600'
-                              : 'text-stone-500 dark:text-stone-400'
-                          }`}
-                        >
-                          {item.desc}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
+                    )}
+                  </div>
                 )
               })}
             </div>
