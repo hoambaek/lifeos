@@ -10,16 +10,16 @@ import { CompletionCelebration } from '@/components/CompletionCelebration'
 export default function WorkoutPage() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [completedSets, setCompletedSets] = useState<number[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingSets, setIsLoadingSets] = useState(true)
 
   const todayWorkout = WORKOUT_ROUTINE[selectedDate.getDay()]
   const isRestDay = todayWorkout === '휴식'
   const exercises: WorkoutExercise[] = isRestDay ? [] : (WORKOUT_DETAILS[todayWorkout] || [])
   const isTodaySelected = isToday(selectedDate)
 
-  // 날짜별 기록 불러오기
+  // 날짜별 완료 상태만 비동기 로드 (UI는 즉시 표시)
   const loadLog = useCallback(async (date: Date) => {
-    setIsLoading(true)
+    setIsLoadingSets(true)
     try {
       const dateStr = format(date, 'yyyy-MM-dd')
       const res = await fetch(`/api/log?date=${dateStr}`)
@@ -34,17 +34,18 @@ export default function WorkoutPage() {
         const exs = workout === '휴식' ? [] : (WORKOUT_DETAILS[workout] || [])
         setCompletedSets(new Array(exs.length).fill(0))
       }
-    } catch (e) {
-      console.error('Failed to load log:', e)
+    } catch {
       setCompletedSets(new Array(exercises.length).fill(0))
     } finally {
-      setIsLoading(false)
+      setIsLoadingSets(false)
     }
   }, [])
 
   useEffect(() => {
+    // 초기값을 0으로 즉시 세팅 (로딩 중에도 UI 표시)
+    setCompletedSets(new Array(exercises.length).fill(0))
     loadLog(selectedDate)
-  }, [selectedDate, loadLog])
+  }, [selectedDate, loadLog, exercises.length])
 
   // 날짜 이동
   const goToPrevDay = () => setSelectedDate(prev => subDays(prev, 1))
@@ -53,7 +54,7 @@ export default function WorkoutPage() {
 
   // 세트 완료 핸들러
   const handleSetComplete = useCallback((index: number) => {
-    if (!isTodaySelected) return // 오늘만 체크 가능
+    if (!isTodaySelected) return
 
     setCompletedSets(prev => {
       const next = [...prev]
@@ -85,14 +86,6 @@ export default function WorkoutPage() {
   const doneCount = exercises.filter((ex, i) => (completedSets[i] || 0) >= ex.sets).length
   const allDone = doneCount === exercises.length && exercises.length > 0
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-stone-300 border-t-stone-900 dark:border-stone-600 dark:border-t-stone-100 rounded-full animate-spin" />
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-background pb-8">
       <WorkoutHeader
@@ -118,7 +111,6 @@ export default function WorkoutPage() {
         </div>
       ) : (
         <>
-          {/* 오늘이 아닌 날 안내 */}
           {!isTodaySelected && (
             <div className="mx-4 mb-3 px-4 py-2.5 rounded-xl bg-stone-100 dark:bg-stone-800/50 text-center">
               <p className="text-xs text-stone-500 dark:text-stone-400">
@@ -127,7 +119,7 @@ export default function WorkoutPage() {
             </div>
           )}
 
-          {/* 운동 체크리스트 */}
+          {/* 운동 체크리스트 — 즉시 표시 */}
           <div className="px-4 pt-4 space-y-3">
             {exercises.map((exercise, index) => (
               <ExerciseCard
@@ -144,7 +136,6 @@ export default function WorkoutPage() {
         </>
       )}
 
-      {/* 장비 범례 */}
       {!isRestDay && (
         <div className="flex items-center justify-center gap-4 mt-6">
           <div className="flex items-center gap-1.5">
