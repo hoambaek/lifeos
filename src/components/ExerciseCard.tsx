@@ -26,22 +26,22 @@ export function ExerciseCard({ exercise, index, completedSets, onSetComplete }: 
       }`}
     >
       <div className="flex items-center">
-        {/* 이미지 — 카드 왼쪽, 세로 가운데 */}
-        <div className="flex-shrink-0 w-[112px] flex items-center justify-center">
+        {/* 이미지 */}
+        <div className="flex-shrink-0 w-[140px] flex items-center justify-center">
           <Image
             src={exercise.image}
             alt={exercise.name}
-            width={112}
+            width={140}
             height={0}
             className={`w-full h-auto ${allDone ? 'opacity-40' : ''}`}
-            sizes="112px"
+            sizes="140px"
           />
         </div>
 
         {/* 운동 정보 */}
         <div className="flex-1 min-w-0 p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold ${
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-[11px] font-bold ${
               exercise.equipment === '덤벨'
                 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
                 : exercise.equipment === 'TRX'
@@ -50,31 +50,31 @@ export function ExerciseCard({ exercise, index, completedSets, onSetComplete }: 
             }`}>
               {exercise.equipment === '덤벨' ? 'D' : exercise.equipment === 'TRX' ? 'T' : 'B'}
             </span>
-            <h3 className={`font-semibold text-sm truncate ${
+            <h3 className={`font-semibold text-base truncate ${
               allDone ? 'text-emerald-700 dark:text-emerald-300 line-through' : 'text-stone-900 dark:text-stone-100'
             }`}>
               {exercise.name}
             </h3>
           </div>
-          <p className="text-xs font-mono text-stone-500 dark:text-stone-400">
+          <p className="text-sm font-mono text-stone-500 dark:text-stone-400">
             {exercise.reps}
           </p>
-          <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-1 mb-2 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1 mb-3 line-clamp-2 leading-relaxed">
             {exercise.desc}
           </p>
 
           {/* Set indicators */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {Array.from({ length: exercise.sets }).map((_, i) => (
               <div
                 key={i}
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all text-[10px] font-bold ${
+                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all text-xs font-bold ${
                   i < completedSets
                     ? 'border-emerald-500 bg-emerald-500 text-white'
                     : 'border-stone-300 dark:border-stone-600 text-stone-400 dark:text-stone-500'
                 }`}
               >
-                {i < completedSets ? <Check className="w-3 h-3" strokeWidth={3} /> : i + 1}
+                {i < completedSets ? <Check className="w-4 h-4" strokeWidth={3} /> : i + 1}
               </div>
             ))}
           </div>
