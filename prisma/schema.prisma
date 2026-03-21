@@ -38,6 +38,9 @@ model DailyLog {
   // 게이미피케이션
   xpEarned      Int     @default(0) // 이 날 획득한 XP
   streakFrozen  Boolean @default(false) // 프리즈 사용 여부
+
+  // 개별 운동 완료 추적 (JSON 배열 문자열, e.g. "[0,2,4]")
+  completedExercises String?
 }
 
 // ============================================

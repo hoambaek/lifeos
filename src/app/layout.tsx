@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, JetBrains_Mono, Playfair_Display, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { BottomNav } from "@/components/BottomNav";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 const outfit = Outfit({
@@ -33,8 +32,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "6개월 근육질 리셋",
-  description: "인바디 기반 6개월 장기 컷팅 플랜 트래커",
+  title: "오늘의 운동",
+  description: "매일 운동 체크리스트",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -79,10 +78,9 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <main className="main-content">
+          <main>
             {children}
           </main>
-          <BottomNav />
         </ThemeProvider>
       </body>
     </html>
