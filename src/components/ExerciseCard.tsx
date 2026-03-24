@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { WorkoutExercise } from '@/stores/useAppStore'
 import { Check } from 'lucide-react'
@@ -12,31 +13,39 @@ interface ExerciseCardProps {
 }
 
 export function ExerciseCard({ exercise, index, completedSets, onSetComplete }: ExerciseCardProps) {
+  const [showFullscreen, setShowFullscreen] = useState(false)
   const allDone = completedSets >= exercise.sets
 
   return (
-    <button
-      onClick={onSetComplete}
-      className={`w-full text-left rounded-2xl border-2 overflow-hidden transition-all duration-300 active:scale-[0.98] ${
-        allDone
-          ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20'
-          : completedSets > 0
-            ? 'border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10'
-            : 'border-border bg-card hover:border-stone-300 dark:hover:border-stone-600'
-      }`}
-    >
-      <div className="flex items-center">
-        {/* 이미지 */}
-        <div className="flex-shrink-0 w-[140px] flex items-center justify-center">
-          <Image
-            src={exercise.image}
-            alt={exercise.name}
-            width={140}
-            height={0}
-            className={`w-full h-auto ${allDone ? 'opacity-40' : ''}`}
-            sizes="140px"
-          />
-        </div>
+    <>
+      <button
+        onClick={onSetComplete}
+        className={`w-full text-left rounded-2xl border-2 overflow-hidden transition-all duration-300 active:scale-[0.98] ${
+          allDone
+            ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20'
+            : completedSets > 0
+              ? 'border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10'
+              : 'border-border bg-card hover:border-stone-300 dark:hover:border-stone-600'
+        }`}
+      >
+        <div className="flex items-center">
+          {/* 이미지 */}
+          <div
+            className="flex-shrink-0 w-[140px] flex items-center justify-center"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowFullscreen(true)
+            }}
+          >
+            <Image
+              src={exercise.image}
+              alt={exercise.name}
+              width={140}
+              height={0}
+              className={`w-full h-auto ${allDone ? 'opacity-40' : ''}`}
+              sizes="140px"
+            />
+          </div>
 
         {/* 운동 정보 */}
         <div className="flex-1 min-w-0 p-4">
@@ -80,6 +89,24 @@ export function ExerciseCard({ exercise, index, completedSets, onSetComplete }: 
           </div>
         </div>
       </div>
-    </button>
+      </button>
+
+      {/* 풀스크린 이미지 오버레이 */}
+      {showFullscreen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setShowFullscreen(false)}
+        >
+          <Image
+            src={exercise.image}
+            alt={exercise.name}
+            width={600}
+            height={0}
+            className="w-full max-w-lg h-auto"
+            sizes="100vw"
+          />
+        </div>
+      )}
+    </>
   )
 }
