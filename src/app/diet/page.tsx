@@ -335,17 +335,6 @@ export default function DietPage() {
   )
 }
 
-function phaseGuidanceShort(phase: DietPhase): string {
-  if (phase.kind === 'luxury_exception') return '럭셔리 분기 — 자유. 다음 부스터 일정만 미리 잡아둘 것.'
-  if (phase.kind === 'maintenance') return '14:10 단식 매일 + 주 1-2회 24h 단식. 단백질 1.2-1.5g/kg, 물 2L+, 수면 6h+.'
-  const w = phase.week
-  if (w === 1 && phase.dayOfWeek <= 3) return '장 휴식기: 단백질 쉐이크 4회/일 + 녹황색 채소·두부.'
-  if (w === 1) return '쉐이크 3회 + 점심 잡곡밥 반공기. 14h 단식.'
-  if (w === 2) return '쉐이크 2회 + 일반식 2끼. 주 1회 24h 단식.'
-  if (w === 3) return '자연당(바나나·고구마·베리) 추가. 주 2회 24h 단식 (연속 금지).'
-  return '과일 1개/일 허용. 주 3회 24h 단식 (사이엔 일반식 필수).'
-}
-
 type PhaseStage = {
   key: string
   label: string
@@ -354,11 +343,11 @@ type PhaseStage = {
 }
 
 const BOOSTER_STAGES: PhaseStage[] = [
-  { key: 'b1a', label: 'W1 D1-3', hint: '장 휴식', Icon: Sprout },
-  { key: 'b1b', label: 'W1 D4-7', hint: '저탄수', Icon: Wheat },
-  { key: 'b2', label: 'W2', hint: '인슐린', Icon: Activity },
-  { key: 'b3', label: 'W3', hint: '대사유연', Icon: Flame },
-  { key: 'b4', label: 'W4', hint: '체지방 가속', Icon: Trophy },
+  { key: 'b1a', label: '장 휴식', hint: '1주 1-3일', Icon: Sprout },
+  { key: 'b1b', label: '저탄수 진입', hint: '1주 4-7일', Icon: Wheat },
+  { key: 'b2', label: '인슐린 회복', hint: '2주차', Icon: Activity },
+  { key: 'b3', label: '대사 유연', hint: '3주차', Icon: Flame },
+  { key: 'b4', label: '체지방 가속', hint: '4주차', Icon: Trophy },
 ]
 
 const MODE_STAGES: PhaseStage[] = [
@@ -426,15 +415,6 @@ function PhaseCard({ phase }: { phase: DietPhase }) {
           <p className="text-[10px] uppercase tracking-wider text-stone-400 mb-1.5">모드</p>
           <div className="flex flex-wrap gap-1.5">{MODE_STAGES.map(renderChip)}</div>
         </div>
-      </div>
-
-      <div className="mt-3 rounded-xl bg-stone-50 dark:bg-stone-900/50 px-3 py-2.5 border border-stone-100 dark:border-stone-800">
-        <p className="font-serif text-base font-bold text-stone-900 dark:text-stone-100 mb-1">
-          {phase.label}
-        </p>
-        <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-          {phaseGuidanceShort(phase)}
-        </p>
       </div>
     </Card>
   )
