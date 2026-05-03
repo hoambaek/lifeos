@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, JetBrains_Mono, Playfair_Display, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { BottomNav } from "@/components/BottomNav";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -78,9 +79,10 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <main>
+          <main className="pb-24">
             {children}
           </main>
+          <BottomNav />
         </ThemeProvider>
       </body>
     </html>
