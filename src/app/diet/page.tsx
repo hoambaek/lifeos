@@ -19,9 +19,20 @@ import {
   ImagePlus,
   Trash2,
   Loader2,
+  Play,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import type { DietPhase } from '@/lib/diet-phase'
+import { FASTING_PRESETS, presetById, type FastingPreset } from '@/lib/fasting-presets'
+
+interface ActiveFasting {
+  id: number
+  preset: string
+  targetHours: number
+  startedAt: string
+  endedAt: string | null
+  completed: boolean
+}
 
 interface MealEntry {
   id: number
@@ -244,32 +255,8 @@ export default function DietPage() {
           </Card>
         )}
 
-        {/* 단식 */}
-        <Card>
-          <div className="flex items-center gap-2 mb-3">
-            <Clock className="w-4 h-4 text-stone-500" />
-            <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400">
-              간헐적 단식
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <TimeInput
-              label="식사창 시작"
-              value={log.fastingStart ?? ''}
-              onChange={(v) => update({ fastingStart: v || null })}
-            />
-            <TimeInput
-              label="식사창 종료"
-              value={log.fastingEnd ?? ''}
-              onChange={(v) => update({ fastingEnd: v || null })}
-            />
-          </div>
-          <Toggle
-            label="오늘 24시간 단식 완료"
-            checked={log.fasting24}
-            onChange={(v) => update({ fasting24: v })}
-          />
-        </Card>
+        {/* 간헐적 단식 (프리셋 + 프로그레스) */}
+        <FastingCard />
 
         {/* 식사 로그 */}
         <MealsCard meals={meals} onAdd={addMeal} onDelete={deleteMeal} />
@@ -366,6 +353,162 @@ function phaseGuidanceShort(phase: DietPhase): string {
   if (w === 2) return '쉐이크 2회 + 일반식 2끼. 주 1회 24h 단식.'
   if (w === 3) return '자연당(바나나·고구마·베리) 추가. 주 2회 24h 단식 (연속 금지).'
   return '과일 1개/일 허용. 주 3회 24h 단식 (사이엔 일반식 필수).'
+}
+
+function FastingCard() {
+  const [active, setActive] = useState<ActiveFasting | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [, setTick] = useState(0)
+
+  const load = useCallback(async () => {
+    const res = await fetch('/api/diet/fasting')
+    const data = await res.json()
+    setActive(data.active)
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  // 활성 단식 진행률 갱신 (30초마다 re-render 트리거)
+  useEffect(() => {
+    if (!active) return
+    const id = setInterval(() => setTick((t) => t + 1), 30000)
+    return () => clearInterval(id)
+  }, [active])
+
+  const start = async (preset: FastingPreset) => {
+    setLoading(true)
+    try {
+      await fetch('/api/diet/fasting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start', preset }),
+      })
+      await load()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const stop = async () => {
+    if (!confirm('단식 종료할까요?')) return
+    setLoading(true)
+    try {
+      await fetch('/api/diet/fasting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stop' }),
+      })
+      await load()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!active) {
+    return (
+      <Card>
+        <div className="flex items-center gap-2 mb-3">
+          <Clock className="w-4 h-4 text-stone-500" />
+          <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400">
+            간헐적 단식
+          </span>
+        </div>
+        <p className="text-sm text-stone-400 text-center mb-3 py-2">
+          시작할 단식을 선택하세요
+        </p>
+        <div className="space-y-2">
+          {FASTING_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => start(p.id)}
+              disabled={loading}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 hover:bg-stone-100 dark:hover:bg-stone-800 active:scale-[0.99] transition-all text-left disabled:opacity-50"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{p.label}</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{p.sub}</p>
+              </div>
+              <div className="w-9 h-9 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-center shrink-0">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 ml-0.5" />}
+              </div>
+            </button>
+          ))}
+        </div>
+      </Card>
+    )
+  }
+
+  const startedAt = new Date(active.startedAt)
+  const now = new Date()
+  const elapsedMs = now.getTime() - startedAt.getTime()
+  const elapsedH = elapsedMs / 3_600_000
+  const targetMs = active.targetHours * 3_600_000
+  const pct = Math.min(100, (elapsedMs / targetMs) * 100)
+  const remainingMs = Math.max(0, targetMs - elapsedMs)
+  const isDone = elapsedH >= active.targetHours
+  const presetLabel = presetById(active.preset)?.label ?? active.preset
+
+  const fmt = (ms: number) => {
+    const totalMin = Math.floor(ms / 60000)
+    const h = Math.floor(totalMin / 60)
+    const m = totalMin % 60
+    return `${h}시간 ${m}분`
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-3">
+        <Clock className={`w-4 h-4 ${isDone ? 'text-emerald-500' : 'text-stone-500'}`} />
+        <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400 flex-1">
+          {isDone ? '단식 목표 달성' : '단식 진행 중'}
+        </span>
+        {isDone && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold tracking-wider uppercase">
+            완료
+          </span>
+        )}
+      </div>
+
+      <p className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">{presetLabel}</p>
+      <p className="text-xs text-stone-500 mt-0.5">
+        시작: {format(startedAt, 'M월 d일 HH:mm', { locale: ko })}
+      </p>
+
+      <div className="mt-3 mb-2 flex justify-between items-baseline">
+        <span className="text-base font-mono tabular-nums font-semibold text-stone-900 dark:text-stone-100">
+          {fmt(elapsedMs)}
+        </span>
+        <span className="text-xs text-stone-400 font-mono">
+          / {active.targetHours}시간 · {Math.round(pct)}%
+        </span>
+      </div>
+      <div className="h-2.5 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ease-out ${
+            isDone ? 'bg-emerald-500' : 'bg-stone-900 dark:bg-stone-100'
+          }`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="text-xs text-stone-400 mt-2 text-center">
+        {isDone ? '목표 달성! 단식을 종료해주세요.' : `남은 시간 ${fmt(remainingMs)}`}
+      </p>
+
+      <button
+        onClick={stop}
+        disabled={loading}
+        className={`w-full mt-3 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 ${
+          isDone
+            ? 'border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
+            : 'border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
+        }`}
+      >
+        {loading ? '처리 중…' : isDone ? '단식 완료 기록' : '단식 종료'}
+      </button>
+    </Card>
+  )
 }
 
 function MealsCard({
@@ -489,7 +632,7 @@ function MealsCard({
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-950 text-sm w-28"
+              className="px-3 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-950 text-base font-mono tabular-nums w-[7.5rem] min-h-[44px] appearance-none"
             />
             <input
               ref={fileRef}
@@ -590,7 +733,7 @@ function TimeInput({ label, value, onChange }: { label: string; value: string; o
         type="time"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+        className="w-full px-3 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-base font-mono tabular-nums min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 appearance-none"
       />
     </div>
   )

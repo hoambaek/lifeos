@@ -185,6 +185,19 @@ model DietLog {
   updatedAt      DateTime @updatedAt
 }
 
+// 간헐적 단식 세션 (활성=endedAt null)
+model FastingSession {
+  id          Int       @id @default(autoincrement())
+  preset      String                                    // "14h" | "18h" | "24h"
+  targetHours Float                                     // 14, 18, 24
+  startedAt   DateTime
+  endedAt     DateTime?                                 // 사용자 종료 시각
+  completed   Boolean   @default(false)                 // 목표 달성 여부
+  createdAt   DateTime  @default(now())
+
+  @@index([startedAt])
+}
+
 // 식사 로그 (날짜별 N건)
 model MealEntry {
   id        Int      @id @default(autoincrement())

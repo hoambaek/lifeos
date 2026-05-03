@@ -30,12 +30,21 @@ export interface DietContext {
     menu: string
     notes?: string | null
   }>
+  activeFasting: {
+    preset: string
+    targetHours: number
+    elapsedHours: number
+    pct: number
+  } | null
   phase: DietPhase
 }
 
 export function buildDietSystemPrompt(ctx: DietContext): string {
-  const { phase, todayLog, recentLogs, todayMeals } = ctx
+  const { phase, todayLog, recentLogs, todayMeals, activeFasting } = ctx
   const guidance = phaseGuidance(phase)
+  const fastingBlock = activeFasting
+    ? `현재 단식 진행 중: ${activeFasting.preset} (목표 ${activeFasting.targetHours}h, 경과 ${activeFasting.elapsedHours.toFixed(1)}h, ${activeFasting.pct.toFixed(0)}%)`
+    : '현재 단식: 진행 중 아님'
   const todayBlock = todayLog
     ? [
         `오늘 식이 로그:`,
@@ -71,6 +80,8 @@ ${FREEDOM_PLAN}
 현재 Phase: ${phase.label} (${phase.code})
 ${guidance}
 
+${fastingBlock}
+
 ${todayBlock}
 
 ${mealsBlock}
@@ -88,6 +99,7 @@ ${recentBlock}
 - 사업 방향 질문이 들어오면 "사업 코치 탭에서 물어보세요"라고만 답하고 끝.
 - 트래킹 일시정지(럭셔리 분기) 중이면 항상 ✅ OK + "럭셔리 분기 중" 명시.
 - 오늘 이미 먹은 것을 고려해서 체인 판단 (예: 점심에 단백질 충분히 먹었으면 저녁은 가볍게).
+- 단식 진행 중이면 단식 깨면 안 되는지 명시 (예: "지금 14시간차인데 2시간만 더 버티면 목표"). 단식 깨도 OK인 경우와 안 되는 경우를 분명히.
 - 사용자가 과거 결정을 언급하면 대화 히스토리를 활용해 일관되게 답.`
 }
 

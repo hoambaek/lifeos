@@ -104,6 +104,21 @@ export async function POST(request: Request) {
       where: { date: { gte: startOfDay(today), lte: endOfDay(today) } },
       orderBy: [{ time: 'asc' }, { createdAt: 'asc' }],
     })
+    const activeFastingRow = await prisma.fastingSession.findFirst({
+      where: { endedAt: null },
+      orderBy: { startedAt: 'desc' },
+    })
+    const activeFasting = activeFastingRow
+      ? (() => {
+          const elapsedHours = (today.getTime() - activeFastingRow.startedAt.getTime()) / 3_600_000
+          return {
+            preset: activeFastingRow.preset,
+            targetHours: activeFastingRow.targetHours,
+            elapsedHours,
+            pct: Math.min(100, (elapsedHours / activeFastingRow.targetHours) * 100),
+          }
+        })()
+      : null
     systemPrompt = buildDietSystemPrompt({
       phase,
       todayLog: todayLog
@@ -134,6 +149,7 @@ export async function POST(request: Request) {
         menu: m.menu,
         notes: m.notes,
       })),
+      activeFasting,
     })
   } else {
     systemPrompt = buildBusinessSystemPrompt()
