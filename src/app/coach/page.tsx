@@ -14,7 +14,8 @@ import {
   History,
   X,
   Loader2,
-  ImagePlus,
+  Paperclip,
+  Sparkles,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -38,8 +39,23 @@ interface Message {
 }
 
 const PLACEHOLDER: Record<CoachType, string> = {
-  diet: '예: "호텔 미팅에서 빵 바스켓 나왔는데 먹어도 돼?" (사진도 첨부 가능)',
-  business: '예: "Sukosol 호텔 디지털 담당이 미팅 잡자는데 가야 해?"',
+  diet: '먹어도 되는지 물어보세요',
+  business: '방향성을 물어보세요',
+}
+
+const SUGGESTIONS: Record<CoachType, string[]> = {
+  diet: [
+    '호텔 미팅에서 빵 바스켓이 나왔어. 한 조각 먹어도 돼?',
+    '와인 시음 자리에서 풀 글라스 한 잔 OK?',
+    '회식 1차 끝나고 2차 가기 전에 뭐 먹는 게 좋아?',
+    '출장 호텔 조식 메뉴 중 어떤 걸 먹어야 해?',
+  ],
+  business: [
+    '동남아 호텔 그룹 미팅 요청이 왔어. 가야 할까?',
+    '신규 그랜트 5천만원짜리가 떴는데 지원해야 할까?',
+    '이번주 자문 요청이 3건인데 어떻게 우선순위 정할까?',
+    '이번 분기 PrivéTag 진척도 점검해줘',
+  ],
 }
 
 function parseImagePaths(raw: unknown): string[] | null {
@@ -68,6 +84,7 @@ export default function CoachPage() {
   const [showHistory, setShowHistory] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const loadSessions = useCallback(async (t: CoachType) => {
     const res = await fetch(`/api/sessions?type=${t}`)
@@ -133,9 +150,17 @@ export default function CoachPage() {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
     }
   }, [messages, streaming, pendingImages])
+
+  // textarea auto-grow
+  useEffect(() => {
+    const t = textareaRef.current
+    if (!t) return
+    t.style.height = 'auto'
+    t.style.height = Math.min(t.scrollHeight, 160) + 'px'
+  }, [input])
 
   const handleFiles = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return
@@ -163,14 +188,12 @@ export default function CoachPage() {
     setPendingImages((prev) => prev.filter((_, idx) => idx !== i))
   }
 
-  const send = useCallback(async () => {
-    const text = input.trim()
+  const send = useCallback(async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim()
     if ((!text && pendingImages.length === 0) || streaming) return
 
     let sid = activeId
-    if (!sid) {
-      sid = await createSession(type)
-    }
+    if (!sid) sid = await createSession(type)
 
     const sentImages = pendingImages
     setInput('')
@@ -239,12 +262,14 @@ export default function CoachPage() {
     )
   }
 
+  const isEmpty = messages.length === 0
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="px-4 pt-12 pb-3 border-b border-stone-200 dark:border-stone-800">
+      <header className="px-4 pt-10 pb-3 border-b border-stone-200 dark:border-stone-800">
         <div className="flex items-center gap-2 mb-3">
-          <MessageCircle className="w-6 h-6 text-stone-400" />
-          <h1 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100 flex-1">Coach</h1>
+          <MessageCircle className="w-5 h-5 text-stone-400" />
+          <h1 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 flex-1">Coach</h1>
           <button
             onClick={() => setShowHistory(true)}
             className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
@@ -260,93 +285,38 @@ export default function CoachPage() {
         </div>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-40">
-        {messages.length === 0 && (
-          <div className="pt-12 text-center">
-            <p className="text-5xl mb-3">{type === 'diet' ? '🍽️' : '💼'}</p>
-            <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-1">
-              {type === 'diet' ? '지금 이거 먹어도 될까?' : '이 방향, 맞을까?'}
-            </h2>
-            <p className="text-sm text-stone-500 dark:text-stone-400 px-6 leading-relaxed">
-              {type === 'diet'
-                ? '오늘 Phase + 맥락 룰로 즉석 판단합니다. 사진을 첨부해 메뉴를 보여줘도 됩니다.'
-                : 'freedom-plan §5 의사결정 칼로 판단합니다.'}
-            </p>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 pb-44">
+        {isEmpty ? (
+          <EmptyState type={type} onPick={(t) => send(t)} />
+        ) : (
+          <div className="space-y-6 max-w-2xl mx-auto">
+            {messages.map((m, i) => (
+              <MessageBubble
+                key={i}
+                message={m}
+                streaming={streaming && i === messages.length - 1 && m.role === 'assistant'}
+              />
+            ))}
           </div>
         )}
-
-        {messages.map((m, i) => (
-          <MessageBubble
-            key={i}
-            message={m}
-            streaming={streaming && i === messages.length - 1 && m.role === 'assistant'}
-          />
-        ))}
       </div>
 
-      {/* Composer */}
-      <div className="fixed bottom-20 inset-x-0 px-4 pb-2 pt-2 bg-gradient-to-t from-background via-background to-transparent">
-        <div className="mx-auto max-w-md">
-          {pendingImages.length > 0 && (
-            <div className="flex gap-2 mb-2 overflow-x-auto pb-1">
-              {pendingImages.map((p, i) => (
-                <div key={p} className="relative shrink-0">
-                  <Image
-                    src={p}
-                    alt="첨부 이미지"
-                    width={64}
-                    height={64}
-                    className="w-16 h-16 object-cover rounded-lg border border-stone-200 dark:border-stone-700"
-                    unoptimized
-                  />
-                  <button
-                    onClick={() => removePending(i)}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-center"
-                    aria-label="삭제"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="flex items-end gap-2 p-2 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 shadow-sm">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              multiple
-              className="hidden"
-              onChange={(e) => handleFiles(e.target.files)}
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading || streaming}
-              className="w-9 h-9 flex items-center justify-center rounded-xl text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-30 transition-colors shrink-0"
-              aria-label="사진 첨부"
-            >
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-5 h-5" />}
-            </button>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder={PLACEHOLDER[type]}
-              rows={1}
-              disabled={streaming}
-              className="flex-1 px-2 py-1.5 bg-transparent text-sm text-stone-900 dark:text-stone-100 placeholder:text-stone-400 resize-none focus:outline-none max-h-32"
-              style={{ minHeight: '32px' }}
-            />
-            <button
-              onClick={send}
-              disabled={(!input.trim() && pendingImages.length === 0) || streaming}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 disabled:opacity-30 transition-opacity shrink-0"
-            >
-              {streaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-      </div>
+      <Composer
+        input={input}
+        setInput={setInput}
+        onKeyDown={onKeyDown}
+        textareaRef={textareaRef}
+        placeholder={PLACEHOLDER[type]}
+        streaming={streaming}
+        uploading={uploading}
+        pendingImages={pendingImages}
+        onAttach={() => fileRef.current?.click()}
+        onRemove={removePending}
+        onSend={() => send()}
+        canSend={!!input.trim() || pendingImages.length > 0}
+        fileRef={fileRef}
+        onFiles={handleFiles}
+      />
 
       {showHistory && (
         <HistoryPanel
@@ -370,42 +340,83 @@ export default function CoachPage() {
   )
 }
 
+function EmptyState({ type, onPick }: { type: CoachType; onPick: (text: string) => void }) {
+  const Icon = type === 'diet' ? Utensils : Briefcase
+  const title = type === 'diet' ? '지금 이거 먹어도 될까?' : '이 방향, 맞을까?'
+  const sub =
+    type === 'diet'
+      ? '오늘 Phase + 단식 + 식사 로그 + 맥락 룰로 즉석 판단합니다. 사진도 첨부 가능.'
+      : 'freedom-plan §5 의사결정 칼 (PrivéTag·뮤즈드마레 앞당기는가)로 판단합니다.'
+  return (
+    <div className="max-w-2xl mx-auto pt-8">
+      <div className="text-center mb-8">
+        <div className="inline-flex w-12 h-12 rounded-full bg-stone-100 dark:bg-stone-900 items-center justify-center mb-4">
+          <Icon className="w-6 h-6 text-stone-500 dark:text-stone-400" />
+        </div>
+        <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100 mb-2">{title}</h2>
+        <p className="text-sm text-stone-500 dark:text-stone-400 px-6 leading-relaxed">{sub}</p>
+      </div>
+      <p className="text-[11px] uppercase tracking-widest text-stone-400 mb-2 px-1">예시 질문</p>
+      <div className="grid grid-cols-1 gap-2">
+        {SUGGESTIONS[type].map((q) => (
+          <button
+            key={q}
+            onClick={() => onPick(q)}
+            className="text-left px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/50 hover:bg-stone-50 dark:hover:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-700 transition-colors text-sm text-stone-700 dark:text-stone-300 leading-snug"
+          >
+            {q}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function MessageBubble({ message, streaming }: { message: Message; streaming: boolean }) {
   const isUser = message.role === 'user'
   const imgs = parseImagePaths(message.imagePaths)
 
-  return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div
-        className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-          isUser
-            ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
-            : 'bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100'
-        }`}
-      >
-        {imgs && imgs.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2">
-            {imgs.map((p) => (
-              <Image
-                key={p}
-                src={p}
-                alt="첨부 이미지"
-                width={200}
-                height={200}
-                className="rounded-lg max-w-[200px] max-h-[200px] object-cover"
-                unoptimized
-              />
-            ))}
-          </div>
-        )}
-        {isUser ? (
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[85%] rounded-2xl rounded-tr-md px-4 py-2.5 text-sm leading-relaxed bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100">
+          {imgs && imgs.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {imgs.map((p) => (
+                <Image
+                  key={p}
+                  src={p}
+                  alt="첨부 이미지"
+                  width={200}
+                  height={200}
+                  className="rounded-lg max-w-[200px] max-h-[200px] object-cover"
+                  unoptimized
+                />
+              ))}
+            </div>
+          )}
           <p className="whitespace-pre-wrap">{message.content}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // assistant: 아이콘 옆 본문 (배경 없음)
+  return (
+    <div className="flex gap-3">
+      <div className="shrink-0 w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-white">
+        <Sparkles className="w-3.5 h-3.5" strokeWidth={2.5} />
+      </div>
+      <div className="flex-1 min-w-0 pt-0.5">
+        {message.content ? (
+          <div className="text-[15px] text-stone-900 dark:text-stone-100">
+            <MarkdownContent text={message.content} />
+            {streaming && <BlinkingCursor />}
+          </div>
         ) : (
-          <MarkdownContent text={message.content} />
-        )}
-        {streaming && message.content === '' && (
-          <span className="inline-flex items-center text-stone-400">
+          <span className="inline-flex items-center gap-2 text-stone-400 text-sm pt-1">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            생각 중…
           </span>
         )}
       </div>
@@ -413,41 +424,174 @@ function MessageBubble({ message, streaming }: { message: Message; streaming: bo
   )
 }
 
-function MarkdownContent({ text }: { text: string }) {
-  if (!text) return null
+function BlinkingCursor() {
   return (
-    <div className="prose-coach">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          p: ({ children }) => <p className="my-1 first:mt-0 last:mb-0 whitespace-pre-wrap">{children}</p>,
-          strong: ({ children }) => <strong className="font-semibold text-stone-900 dark:text-stone-100">{children}</strong>,
-          em: ({ children }) => <em className="italic">{children}</em>,
-          ul: ({ children }) => <ul className="list-disc pl-5 my-1.5 space-y-0.5">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal pl-5 my-1.5 space-y-0.5">{children}</ol>,
-          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-          h1: ({ children }) => <h3 className="font-serif font-bold text-base mt-2 mb-1">{children}</h3>,
-          h2: ({ children }) => <h3 className="font-serif font-bold text-base mt-2 mb-1">{children}</h3>,
-          h3: ({ children }) => <h3 className="font-serif font-bold text-sm mt-2 mb-1">{children}</h3>,
-          code: ({ children }) => (
-            <code className="px-1 py-0.5 rounded bg-stone-200 dark:bg-stone-700 text-[12px] font-mono">
-              {children}
-            </code>
-          ),
-          blockquote: ({ children }) => (
-            <blockquote className="border-l-2 border-stone-300 dark:border-stone-600 pl-3 my-1.5 text-stone-600 dark:text-stone-400">
-              {children}
-            </blockquote>
-          ),
-          a: ({ children, href }) => (
-            <a href={href} target="_blank" rel="noreferrer" className="underline text-emerald-600 dark:text-emerald-400">
-              {children}
-            </a>
-          ),
-        }}
-      >
-        {text}
-      </ReactMarkdown>
+    <span className="inline-block w-[3px] h-[1em] -mb-[2px] ml-0.5 align-text-bottom bg-emerald-500 animate-pulse" />
+  )
+}
+
+function MarkdownContent({ text }: { text: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0 leading-7 whitespace-pre-wrap">{children}</p>,
+        strong: ({ children }) => <strong className="font-semibold text-stone-900 dark:text-stone-50">{children}</strong>,
+        em: ({ children }) => <em className="italic">{children}</em>,
+        ul: ({ children }) => <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1">{children}</ol>,
+        li: ({ children }) => <li className="leading-7">{children}</li>,
+        h1: ({ children }) => <h3 className="font-serif font-bold text-base mt-4 mb-2">{children}</h3>,
+        h2: ({ children }) => <h3 className="font-serif font-bold text-base mt-4 mb-2">{children}</h3>,
+        h3: ({ children }) => <h3 className="font-serif font-bold text-[15px] mt-3 mb-1.5">{children}</h3>,
+        code: ({ children }) => (
+          <code className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-[13px] font-mono text-stone-900 dark:text-stone-100">
+            {children}
+          </code>
+        ),
+        pre: ({ children }) => (
+          <pre className="my-3 p-3 rounded-xl bg-stone-100 dark:bg-stone-900 overflow-x-auto text-[13px] font-mono">
+            {children}
+          </pre>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-2 border-emerald-500/50 pl-3 my-2 text-stone-600 dark:text-stone-400 italic">
+            {children}
+          </blockquote>
+        ),
+        a: ({ children, href }) => (
+          <a href={href} target="_blank" rel="noreferrer" className="underline underline-offset-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300">
+            {children}
+          </a>
+        ),
+        hr: () => <hr className="my-4 border-stone-200 dark:border-stone-800" />,
+        table: ({ children }) => (
+          <div className="my-3 overflow-x-auto">
+            <table className="min-w-full text-[13px] border-collapse">{children}</table>
+          </div>
+        ),
+        th: ({ children }) => (
+          <th className="border border-stone-200 dark:border-stone-700 px-2 py-1 bg-stone-50 dark:bg-stone-900 text-left font-semibold">
+            {children}
+          </th>
+        ),
+        td: ({ children }) => (
+          <td className="border border-stone-200 dark:border-stone-700 px-2 py-1">{children}</td>
+        ),
+      }}
+    >
+      {text}
+    </ReactMarkdown>
+  )
+}
+
+function Composer({
+  input,
+  setInput,
+  onKeyDown,
+  textareaRef,
+  placeholder,
+  streaming,
+  uploading,
+  pendingImages,
+  onAttach,
+  onRemove,
+  onSend,
+  canSend,
+  fileRef,
+  onFiles,
+}: {
+  input: string
+  setInput: (v: string) => void
+  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>
+  placeholder: string
+  streaming: boolean
+  uploading: boolean
+  pendingImages: string[]
+  onAttach: () => void
+  onRemove: (i: number) => void
+  onSend: () => void
+  canSend: boolean
+  fileRef: React.RefObject<HTMLInputElement | null>
+  onFiles: (f: FileList | null) => void
+}) {
+  return (
+    <div className="fixed bottom-20 inset-x-0 px-3 pb-2 pt-3 bg-background/85 backdrop-blur-md border-t border-stone-200/50 dark:border-stone-800/50">
+      <div className="mx-auto max-w-2xl">
+        {pendingImages.length > 0 && (
+          <div className="flex gap-2 mb-2 overflow-x-auto pb-1">
+            {pendingImages.map((p, i) => (
+              <div key={p} className="relative shrink-0">
+                <Image
+                  src={p}
+                  alt="첨부 이미지"
+                  width={56}
+                  height={56}
+                  className="w-14 h-14 object-cover rounded-lg border border-stone-200 dark:border-stone-700"
+                  unoptimized
+                />
+                <button
+                  onClick={() => onRemove(i)}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-center"
+                  aria-label="삭제"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 shadow-sm">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            multiple
+            className="hidden"
+            onChange={(e) => onFiles(e.target.files)}
+          />
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={placeholder}
+            rows={1}
+            disabled={streaming}
+            className="w-full px-4 pt-3 pb-2 bg-transparent text-base text-stone-900 dark:text-stone-100 placeholder:text-stone-400 resize-none focus:outline-none"
+            style={{ minHeight: '44px', maxHeight: '160px' }}
+          />
+          <div className="flex items-center justify-between px-2 py-2 border-t border-stone-100 dark:border-stone-800/50">
+            <button
+              onClick={onAttach}
+              disabled={uploading || streaming}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-30 transition-colors"
+              aria-label="사진 첨부"
+            >
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={onSend}
+              disabled={!canSend || streaming}
+              className="h-9 px-3.5 flex items-center gap-1.5 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium disabled:opacity-30 transition-opacity"
+            >
+              {streaming ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  답변 중
+                </>
+              ) : (
+                <>
+                  <Send className="w-3.5 h-3.5" />
+                  보내기
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+        <p className="text-[11px] text-stone-400 text-center mt-1.5">Enter 전송 · Shift+Enter 줄바꿈</p>
+      </div>
     </div>
   )
 }
