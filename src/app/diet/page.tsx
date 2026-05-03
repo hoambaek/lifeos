@@ -362,8 +362,6 @@ const STATE_STAGES: PhaseStage[] = [
   { key: 'lux', label: '럭셔리 분기', hint: '예외 자유', Icon: Sparkles },
 ]
 
-const BOOSTER_ORDER = ['b1a', 'b1b', 'b2', 'b3', 'b4']
-
 function getCurrentPhaseKey(phase: DietPhase): string {
   if (phase.kind === 'not_started') return 'pre'
   if (phase.kind === 'maintenance') return 'm'
@@ -375,35 +373,11 @@ function getCurrentPhaseKey(phase: DietPhase): string {
 
 function PhaseCard({ phase, onStartBoosterToday }: { phase: DietPhase; onStartBoosterToday: () => Promise<void> }) {
   const currentKey = getCurrentPhaseKey(phase)
-  const isBooster = phase.kind === 'booster'
-
-  // 현재가 부스터인 경우, 그 이전 부스터 단계는 "지나간"으로 표시
-  const passed = new Set<string>()
-  if (isBooster) {
-    const idx = BOOSTER_ORDER.indexOf(currentKey)
-    for (let i = 0; i < idx; i++) passed.add(BOOSTER_ORDER[i])
-  }
-
-  const renderChip = (stage: PhaseStage) => {
-    const isCurrent = stage.key === currentKey
-    const isPassed = passed.has(stage.key)
-    const cls = isCurrent
-      ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm'
-      : isPassed
-        ? 'border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
-        : 'border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/40 text-stone-400 dark:text-stone-500'
-    const Icon = stage.Icon
-    return (
-      <div
-        key={stage.key}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs font-medium transition-colors ${cls}`}
-      >
-        <Icon className="w-3.5 h-3.5" />
-        <span>{stage.label}</span>
-        <span className={`text-[10px] ${isCurrent ? 'text-white/80' : 'opacity-70'}`}>· {stage.hint}</span>
-      </div>
-    )
-  }
+  const current =
+    BOOSTER_STAGES.find((s) => s.key === currentKey) ??
+    STATE_STAGES.find((s) => s.key === currentKey)
+  if (!current) return null
+  const Icon = current.Icon
 
   return (
     <Card>
@@ -414,21 +388,18 @@ function PhaseCard({ phase, onStartBoosterToday }: { phase: DietPhase; onStartBo
         </span>
       </div>
 
-      <div className="space-y-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-stone-400 mb-1.5">부스터 4주</p>
-          <div className="flex flex-wrap gap-1.5">{BOOSTER_STAGES.map(renderChip)}</div>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-stone-400 mb-1.5">상태</p>
-          <div className="flex flex-wrap gap-1.5">{STATE_STAGES.map(renderChip)}</div>
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500 text-white shadow-sm">
+        <Icon className="w-6 h-6 shrink-0" />
+        <div className="min-w-0">
+          <p className="font-serif text-lg font-bold leading-tight">{current.label}</p>
+          <p className="text-xs text-white/80 mt-0.5">{current.hint}</p>
         </div>
       </div>
 
       {phase.kind === 'not_started' && (
         <button
           onClick={() => onStartBoosterToday()}
-          className="w-full mt-3 px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors"
+          className="w-full mt-3 px-4 py-2.5 rounded-lg bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-stone-200 text-white dark:text-stone-900 text-sm font-semibold transition-colors"
         >
           오늘부터 부스터 시작
         </button>
