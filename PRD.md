@@ -19,8 +19,9 @@
 * **Styling:** Tailwind CSS 4.x ✅
 * **UI Components:** Shadcn/ui (Radix UI 기반) ✅
 * **Frontend Design:** `frontend-design` 스킬 활용 ✅
-* **Database:** PostgreSQL (Neon) - Vercel 연동 ✅
-* **ORM:** Prisma ✅
+* **Database:** Turso (libSQL/SQLite) ✅ *(Postgres/Neon에서 마이그레이션)*
+* **ORM:** Prisma + `@prisma/adapter-libsql` ✅
+* **AI:** Anthropic Claude SDK (`claude-opus-4-5`, streaming + Vision) ✅
 * **State Management:** Zustand ✅
 * **Charts:** Recharts ✅
 * **Image Analysis:** Google Gemini Vision API (인바디 OCR) ✅
@@ -103,6 +104,33 @@
     * 인바디 점수 추이 그래프 ✅
     * 변화 요약 카드 (골격근량, 체지방량, 체지방률 증감) ✅
 * **목표 달성 현황:** 시작체중 → 현재체중 → 목표체중 진행률 ✅
+
+---
+
+### F. Coach (AI 챗봇) ✅ v2 (2026.05)
+* **두 모드 분리** (탭 전환):
+    * **식이 코치** — "지금 이거 먹어도 돼?" 형식 즉석 판단
+    * **사업 코치** — "이 방향 맞아?" — freedom-plan §5 의사결정 칼 적용
+* **자동 컨텍스트 주입** (식이 모드):
+    * 오늘 Phase + 활성 단식 진행률 + 오늘 식사 로그 + 최근 7일 요약
+* **고정 출력 형식**:
+    * 식이: 판단(✅/⚠️/❌) / 이유 / 대안
+    * 사업: Q1·Q2 통과 / 판단 / 이유 / 대안 액션
+* **사진 첨부 + Vision** — 메뉴/장면 사진으로 직접 판단 가능
+* **대화 영구 저장** — 호암님의 과거 결정을 기억하고 일관되게 답
+* **마크다운 렌더링** + 스트리밍 커서 + 예시 질문 4종
+
+### G. 식이 트래킹 ✅ v2 (2026.05)
+* **스위치온 다이어트 Phase 자동 계산**:
+    * 시작 전 → 부스터 W1 D1-3 → W1 D4-7 → W2 → W3 → W4 → 유지기 → (분기 1회) 럭셔리 분기
+    * "오늘부터 부스터 시작" 버튼 한 번 누르면 자동 진행
+* **간헐적 단식 프리셋** — 14h(매일) / 18h(저녁 6시→정오) / 24h(주 1-2회)
+    * 시작 누르면 진행률 프로그레스, 30초마다 갱신
+* **식사 로그** — 시간 + 메뉴 + 사진. Coach가 체인 판단에 활용
+* **맥락 룰 토글 4종** — 호텔/B2B 미팅 / 와인 시음 / 출장 / 회식
+    * freedom-plan §5.2 룰 적용 여부를 코치가 인지
+* **단백질·물·수면** — 입력 후 자동 저장(500ms 디바운스)
+* **부스터 시작일 / 럭셔리 분기 기간 설정** — 우상단 ⚙ 패널
 
 ---
 

@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LifeOS
 
-## Getting Started
+호암님의 개인 라이프 OS — 운동·식이·사업 의사결정을 한 모바일 PWA에서.
 
-First, run the development server:
+## 구성
+
+| 탭 | 역할 |
+|---|---|
+| 🏋️ **운동** | 요일별 자동 루틴 + 체크리스트 + 인바디 트래킹 |
+| 💬 **Coach** | AI 챗봇 (식이/사업 두 모드, 사진 첨부, 대화 영구 저장) |
+| 🍽️ **식이** | 스위치온 다이어트 Phase 자동 계산 + 간헐적 단식 + 식사 로그 + 맥락 룰 |
+
+## Coach가 판단의 근거로 쓰는 것
+
+- `src/lib/freedom-plan.ts` — 호암님의 자유 자금 확보 플랜 (PrivéTag·뮤즈드마레·스위치온 다이어트)
+- 오늘 Phase + 활성 단식 + 오늘 식사 로그 + 최근 7일 요약 (식이 모드)
+- §5 의사결정 칼 3가지 질문 — 사업 라인 우선순위 (사업 모드)
+
+## 기술 스택
+
+- Next.js 16 (App Router) · React 19 · TypeScript
+- Tailwind CSS v4 + shadcn/ui
+- Turso (libSQL/SQLite) + Prisma + PrismaLibSql adapter
+- Anthropic Claude (`claude-opus-4-5`, streaming + Vision)
+- next-themes · PWA · Vercel deploy
+
+## 개발
 
 ```bash
+# 1. 의존성
+npm install
+
+# 2. 환경변수 (.env / .env.local)
+TURSO_DATABASE_URL=...
+TURSO_AUTH_TOKEN=...
+ANTHROPIC_API_KEY=...
+
+# 3. dev 서버 (포트 4600)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## DB 마이그레이션
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`prisma db push` 사용 불가. SQL을 libSQL client로 직접 적용:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# schema.prisma 수정 후
+node scripts/migrate-*.mjs   # ALTER / CREATE
+npx prisma generate          # 타입 갱신
+```
 
-## Learn More
+기존 마이그레이션 스크립트:
+- `migrate-coach.mjs` — DietProfile/DietLog/ChatSession/ChatMessage
+- `migrate-add-images.mjs` — ChatMessage.imagePaths
+- `migrate-add-meals.mjs` — MealEntry
+- `migrate-add-fasting.mjs` — FastingSession
 
-To learn more about Next.js, take a look at the following resources:
+## 배포
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+git push   # main → Vercel 자동 배포
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Vercel Project Settings → Environment Variables에 `ANTHROPIC_API_KEY` 등록 필수.
 
-## Deploy on Vercel
+## 추가 문서
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `CLAUDE.md` — 프로젝트 작업 가이드 (다음 세션의 Claude용)
+- `PRD.md` — 기능별 상세 요구사항
