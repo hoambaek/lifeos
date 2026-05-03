@@ -20,6 +20,12 @@ import {
   Trash2,
   Loader2,
   Play,
+  Sprout,
+  Wheat,
+  Activity,
+  Flame,
+  Trophy,
+  Heart,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import type { DietPhase } from '@/lib/diet-phase'
@@ -238,22 +244,7 @@ export default function DietPage() {
         )}
 
         {/* Phase 가이드 */}
-        {phase && (
-          <Card>
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-emerald-500" />
-              <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400">
-                현재 Phase
-              </span>
-            </div>
-            <p className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 mb-1">
-              {phase.label}
-            </p>
-            <p className="text-sm text-stone-600 dark:text-stone-400 whitespace-pre-line leading-relaxed">
-              {phaseGuidanceShort(phase)}
-            </p>
-          </Card>
-        )}
+        {phase && <PhaseCard phase={phase} />}
 
         {/* 간헐적 단식 (프리셋 + 프로그레스) */}
         <FastingCard />
@@ -353,6 +344,100 @@ function phaseGuidanceShort(phase: DietPhase): string {
   if (w === 2) return '쉐이크 2회 + 일반식 2끼. 주 1회 24h 단식.'
   if (w === 3) return '자연당(바나나·고구마·베리) 추가. 주 2회 24h 단식 (연속 금지).'
   return '과일 1개/일 허용. 주 3회 24h 단식 (사이엔 일반식 필수).'
+}
+
+type PhaseStage = {
+  key: string
+  label: string
+  hint: string
+  Icon: typeof Sparkles
+}
+
+const BOOSTER_STAGES: PhaseStage[] = [
+  { key: 'b1a', label: 'W1 D1-3', hint: '장 휴식', Icon: Sprout },
+  { key: 'b1b', label: 'W1 D4-7', hint: '저탄수', Icon: Wheat },
+  { key: 'b2', label: 'W2', hint: '인슐린', Icon: Activity },
+  { key: 'b3', label: 'W3', hint: '대사유연', Icon: Flame },
+  { key: 'b4', label: 'W4', hint: '체지방 가속', Icon: Trophy },
+]
+
+const MODE_STAGES: PhaseStage[] = [
+  { key: 'm', label: '유지기', hint: '14:10 매일', Icon: Heart },
+  { key: 'lux', label: '럭셔리 분기', hint: '예외 자유', Icon: Sparkles },
+]
+
+const BOOSTER_ORDER = ['b1a', 'b1b', 'b2', 'b3', 'b4']
+
+function getCurrentPhaseKey(phase: DietPhase): string {
+  if (phase.kind === 'maintenance') return 'm'
+  if (phase.kind === 'luxury_exception') return 'lux'
+  if (phase.week === 1 && phase.dayOfWeek <= 3) return 'b1a'
+  if (phase.week === 1) return 'b1b'
+  return `b${phase.week}`
+}
+
+function PhaseCard({ phase }: { phase: DietPhase }) {
+  const currentKey = getCurrentPhaseKey(phase)
+  const isBooster = phase.kind === 'booster'
+
+  // 현재가 부스터인 경우, 그 이전 부스터 단계는 "지나간"으로 표시
+  const passed = new Set<string>()
+  if (isBooster) {
+    const idx = BOOSTER_ORDER.indexOf(currentKey)
+    for (let i = 0; i < idx; i++) passed.add(BOOSTER_ORDER[i])
+  }
+
+  const renderChip = (stage: PhaseStage) => {
+    const isCurrent = stage.key === currentKey
+    const isPassed = passed.has(stage.key)
+    const cls = isCurrent
+      ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm'
+      : isPassed
+        ? 'border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
+        : 'border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/40 text-stone-400 dark:text-stone-500'
+    const Icon = stage.Icon
+    return (
+      <div
+        key={stage.key}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs font-medium transition-colors ${cls}`}
+      >
+        <Icon className="w-3.5 h-3.5" />
+        <span>{stage.label}</span>
+        <span className={`text-[10px] ${isCurrent ? 'text-white/80' : 'opacity-70'}`}>· {stage.hint}</span>
+      </div>
+    )
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="w-4 h-4 text-emerald-500" />
+        <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400">
+          현재 Phase
+        </span>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-stone-400 mb-1.5">부스터 4주</p>
+          <div className="flex flex-wrap gap-1.5">{BOOSTER_STAGES.map(renderChip)}</div>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-stone-400 mb-1.5">모드</p>
+          <div className="flex flex-wrap gap-1.5">{MODE_STAGES.map(renderChip)}</div>
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-xl bg-stone-50 dark:bg-stone-900/50 px-3 py-2.5 border border-stone-100 dark:border-stone-800">
+        <p className="font-serif text-base font-bold text-stone-900 dark:text-stone-100 mb-1">
+          {phase.label}
+        </p>
+        <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+          {phaseGuidanceShort(phase)}
+        </p>
+      </div>
+    </Card>
+  )
 }
 
 function FastingCard() {
