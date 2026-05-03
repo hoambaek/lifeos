@@ -1,6 +1,7 @@
 import { differenceInCalendarDays } from 'date-fns'
 
 export type DietPhase =
+  | { kind: 'not_started'; code: 'not_started'; label: string }
   | { kind: 'booster'; week: 1 | 2 | 3 | 4; dayOfWeek: 1 | 2 | 3 | 4 | 5 | 6 | 7; code: string; label: string }
   | { kind: 'maintenance'; code: 'maintenance'; label: string }
   | { kind: 'luxury_exception'; code: 'luxury_exception'; label: string }
@@ -26,12 +27,18 @@ export function computePhase(args: {
       const label = `부스터 ${week}주차 ${dayOfWeek}일차`
       return { kind: 'booster', week, dayOfWeek, code, label }
     }
+    if (dayIndex >= 28) {
+      return { kind: 'maintenance', code: 'maintenance', label: '유지기' }
+    }
   }
 
-  return { kind: 'maintenance', code: 'maintenance', label: '유지기' }
+  return { kind: 'not_started', code: 'not_started', label: '아직 시작 전' }
 }
 
 export function phaseGuidance(phase: DietPhase): string {
+  if (phase.kind === 'not_started') {
+    return '아직 부스터를 시작하지 않은 상태. 4주 부스터로 체질을 리셋한 뒤 유지기로 들어가는 게 정석. 출장 비는 윈도우에 맞춰 시작일을 잡으세요.'
+  }
   if (phase.kind === 'luxury_exception') {
     return '럭셔리 분기 — 자유 (분기 1회 예외 기간). 다음 분기 부스터 진입 일정은 미리 잡아둘 것.'
   }

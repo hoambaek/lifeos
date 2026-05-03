@@ -26,6 +26,7 @@ import {
   Flame,
   Trophy,
   Heart,
+  Hourglass,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import type { DietPhase } from '@/lib/diet-phase'
@@ -244,7 +245,12 @@ export default function DietPage() {
         )}
 
         {/* Phase 가이드 */}
-        {phase && <PhaseCard phase={phase} />}
+        {phase && (
+          <PhaseCard
+            phase={phase}
+            onStartBoosterToday={() => saveProfile({ boosterStartDate: format(new Date(), 'yyyy-MM-dd') })}
+          />
+        )}
 
         {/* 간헐적 단식 (프리셋 + 프로그레스) */}
         <FastingCard />
@@ -350,7 +356,8 @@ const BOOSTER_STAGES: PhaseStage[] = [
   { key: 'b4', label: '체지방 가속', hint: '4주차', Icon: Trophy },
 ]
 
-const MODE_STAGES: PhaseStage[] = [
+const STATE_STAGES: PhaseStage[] = [
+  { key: 'pre', label: '시작 전', hint: '부스터 진입 전', Icon: Hourglass },
   { key: 'm', label: '유지기', hint: '14:10 매일', Icon: Heart },
   { key: 'lux', label: '럭셔리 분기', hint: '예외 자유', Icon: Sparkles },
 ]
@@ -358,6 +365,7 @@ const MODE_STAGES: PhaseStage[] = [
 const BOOSTER_ORDER = ['b1a', 'b1b', 'b2', 'b3', 'b4']
 
 function getCurrentPhaseKey(phase: DietPhase): string {
+  if (phase.kind === 'not_started') return 'pre'
   if (phase.kind === 'maintenance') return 'm'
   if (phase.kind === 'luxury_exception') return 'lux'
   if (phase.week === 1 && phase.dayOfWeek <= 3) return 'b1a'
@@ -365,7 +373,7 @@ function getCurrentPhaseKey(phase: DietPhase): string {
   return `b${phase.week}`
 }
 
-function PhaseCard({ phase }: { phase: DietPhase }) {
+function PhaseCard({ phase, onStartBoosterToday }: { phase: DietPhase; onStartBoosterToday: () => Promise<void> }) {
   const currentKey = getCurrentPhaseKey(phase)
   const isBooster = phase.kind === 'booster'
 
@@ -412,10 +420,19 @@ function PhaseCard({ phase }: { phase: DietPhase }) {
           <div className="flex flex-wrap gap-1.5">{BOOSTER_STAGES.map(renderChip)}</div>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-stone-400 mb-1.5">모드</p>
-          <div className="flex flex-wrap gap-1.5">{MODE_STAGES.map(renderChip)}</div>
+          <p className="text-[10px] uppercase tracking-wider text-stone-400 mb-1.5">상태</p>
+          <div className="flex flex-wrap gap-1.5">{STATE_STAGES.map(renderChip)}</div>
         </div>
       </div>
+
+      {phase.kind === 'not_started' && (
+        <button
+          onClick={() => onStartBoosterToday()}
+          className="w-full mt-3 px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors"
+        >
+          오늘부터 부스터 시작
+        </button>
+      )}
     </Card>
   )
 }
