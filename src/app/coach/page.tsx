@@ -280,7 +280,7 @@ export default function CoachPage() {
           <ThemeToggle />
         </div>
         <div className="flex gap-1 p-1 rounded-xl bg-stone-100 dark:bg-stone-900">
-          <TypeTab t="diet" label="식이 코치" Icon={Utensils} />
+          <TypeTab t="diet" label="식단 코치" Icon={Utensils} />
           <TypeTab t="business" label="사업 코치" Icon={Briefcase} />
         </div>
       </header>
@@ -615,7 +615,7 @@ function HistoryPanel({
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200 dark:border-stone-800">
           <h2 className="font-serif text-lg font-bold">
-            {type === 'diet' ? '식이 코치 대화' : '사업 코치 대화'}
+            {type === 'diet' ? '식단 코치 대화' : '사업 코치 대화'}
           </h2>
           <button
             onClick={onClose}

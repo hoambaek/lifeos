@@ -1,906 +1,420 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
-import Image from 'next/image'
-import { addDays, subDays, format, isToday } from 'date-fns'
+import { useEffect, useState, useCallback } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from '@/components/ui/dialog'
+import { format, addDays, subDays } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import {
-  Utensils,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Beef,
-  Droplets,
-  BedDouble,
-  Sparkles,
-  Settings2,
-  Plus,
-  X,
-  ImagePlus,
-  Trash2,
-  Loader2,
-  Play,
-  Sprout,
-  Wheat,
-  Activity,
-  Flame,
-  Trophy,
-  Heart,
-  Hourglass,
+  ChevronLeft, ChevronRight,
+  Flame, Play, Loader2, RotateCcw, Check,
 } from 'lucide-react'
-import { ThemeToggle } from '@/components/ThemeToggle'
-import type { DietPhase } from '@/lib/diet-phase'
-import { FASTING_PRESETS, presetById, type FastingPreset } from '@/lib/fasting-presets'
+import {
+  WEEK_META,
+  computeWeekAndDay, getDailyGuide,
+  type MealSlot,
+} from '@/lib/diet-guide'
 
-interface ActiveFasting {
+interface DietConfig {
   id: number
-  preset: string
-  targetHours: number
-  startedAt: string
-  endedAt: string | null
-  completed: boolean
-}
-
-interface MealEntry {
-  id: number
-  date: string
-  time: string | null
-  menu: string
-  imagePath: string | null
-  notes: string | null
+  startDate: string
+  currentWeek: number
+  currentPhase: string
+  isActive: boolean
 }
 
 interface DietLog {
-  id?: number
-  date?: string
-  phase: string
-  fastingStart: string | null
-  fastingEnd: string | null
-  fasting24: boolean
-  proteinG: number
-  waterMl: number
-  sleepHours: number | null
-  hotelMeeting: boolean
-  wineTasting: boolean
-  travel: boolean
-  businessDinner: boolean
-  notes: string | null
-}
-
-interface DietProfile {
   id: number
-  boosterStartDate: string | null
-  luxuryStart: string | null
-  luxuryEnd: string | null
+  breakfastDone: boolean
+  lunchDone: boolean
+  snackDone: boolean
+  dinnerDone: boolean
 }
 
-const EMPTY_LOG: DietLog = {
-  phase: 'maintenance',
-  fastingStart: '12:00',
-  fastingEnd: '20:00',
-  fasting24: false,
-  proteinG: 0,
-  waterMl: 0,
-  sleepHours: null,
-  hotelMeeting: false,
-  wineTasting: false,
-  travel: false,
-  businessDinner: false,
-  notes: null,
-}
+type MealKey = 'breakfast' | 'lunch' | 'snack' | 'dinner'
 
 export default function DietPage() {
-  const [date, setDate] = useState(new Date())
-  const [log, setLog] = useState<DietLog>(EMPTY_LOG)
-  const [profile, setProfile] = useState<DietProfile | null>(null)
-  const [phase, setPhase] = useState<DietPhase | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
-  const [meals, setMeals] = useState<MealEntry[]>([])
-  const saveTimer = useRef<NodeJS.Timeout | null>(null)
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [config, setConfig] = useState<DietConfig | null>(null)
+  const [log, setLog] = useState<DietLog | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isStartDialogOpen, setIsStartDialogOpen] = useState(false)
+  const [startDateInput, setStartDateInput] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [isStarting, setIsStarting] = useState(false)
 
-  const today = isToday(date)
-
-  const loadMeals = useCallback(async (d: Date) => {
-    const res = await fetch(`/api/diet/meals?date=${format(d, 'yyyy-MM-dd')}`)
-    const data: MealEntry[] = await res.json()
-    setMeals(data)
-  }, [])
-
-  const loadDay = useCallback(async (d: Date) => {
-    const res = await fetch(`/api/diet?date=${format(d, 'yyyy-MM-dd')}`)
-    const data = await res.json()
-    setProfile(data.profile)
-    setPhase(data.phase)
-    if (data.log) {
-      setLog({
-        ...EMPTY_LOG,
-        ...data.log,
-        notes: data.log.notes ?? null,
-      })
-    } else {
-      setLog({ ...EMPTY_LOG, phase: data.phase?.code ?? 'maintenance' })
+  // 데이터 로드
+  const loadData = useCallback(async (date: Date) => {
+    setIsLoading(true)
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd')
+      const res = await fetch(`/api/diet?type=date&date=${dateStr}`)
+      if (res.ok) {
+        const data = await res.json()
+        setConfig(data.config ?? null)
+        setLog(data.log ?? null)
+      } else {
+        setConfig(null)
+        setLog(null)
+      }
+    } catch {
+      setConfig(null)
+      setLog(null)
     }
+    setIsLoading(false)
   }, [])
 
-  useEffect(() => {
-    loadDay(date)
-    loadMeals(date)
-  }, [date, loadDay, loadMeals])
+  // 끼니 체크 토글 (Optimistic Update)
+  const toggleMeal = async (mealKey: MealKey) => {
+    const doneField = `${mealKey}Done` as 'breakfastDone' | 'lunchDone' | 'snackDone' | 'dinnerDone'
+    const current = log?.[doneField] ?? false
+    const next = !current
 
-  const addMeal = useCallback(async (meal: { time: string | null; menu: string; imagePath: string | null; notes: string | null }) => {
-    await fetch('/api/diet/meals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: format(date, 'yyyy-MM-dd'), ...meal }),
-    })
-    await loadMeals(date)
-  }, [date, loadMeals])
-
-  const deleteMeal = useCallback(async (id: number) => {
-    await fetch(`/api/diet/meals?id=${id}`, { method: 'DELETE' })
-    await loadMeals(date)
-  }, [date, loadMeals])
-
-  const persist = useCallback(async (next: DietLog) => {
-    await fetch('/api/diet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        date: format(date, 'yyyy-MM-dd'),
-        ...next,
-        phase: phase?.code ?? next.phase,
-      }),
-    })
-  }, [date, phase])
-
-  // 자동 저장 (디바운스)
-  const update = useCallback((patch: Partial<DietLog>) => {
+    // 낙관적 업데이트
     setLog((prev) => {
-      const next = { ...prev, ...patch }
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-      saveTimer.current = setTimeout(() => {
-        persist(next).catch((e) => console.error(e))
-      }, 500)
-      return next
+      const base = prev ?? { id: 0, breakfastDone: false, lunchDone: false, snackDone: false, dinnerDone: false }
+      return { ...base, [doneField]: next }
     })
-  }, [persist])
 
-  const saveProfile = useCallback(async (patch: Partial<DietProfile>) => {
-    const next = {
-      boosterStartDate: profile?.boosterStartDate ?? null,
-      luxuryStart: profile?.luxuryStart ?? null,
-      luxuryEnd: profile?.luxuryEnd ?? null,
-      ...patch,
-    }
-    await fetch('/api/diet/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(next),
-    })
-    await loadDay(date)
-  }, [profile, date, loadDay])
-
-  // 진척도 (단백질 100g, 물 2000ml 기준)
-  const proteinPct = Math.min(100, Math.round((log.proteinG / 100) * 100))
-  const waterPct = Math.min(100, Math.round((log.waterMl / 2000) * 100))
-
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="px-6">
-        <div className="pt-12 pb-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setDate((d) => subDays(d, 1))}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setDate(new Date())}
-                className={`text-xs font-medium tracking-widest uppercase transition-colors ${
-                  today ? 'text-stone-900 dark:text-stone-100' : 'text-stone-400 dark:text-stone-500 active:text-emerald-500'
-                }`}
-              >
-                {format(date, 'M월 d일 EEEE', { locale: ko })}
-                {today && <span className="ml-1.5 text-emerald-500">today</span>}
-              </button>
-              <button
-                onClick={() => setDate((d) => addDays(d, 1))}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-            <ThemeToggle />
-          </div>
-
-          <div className="flex items-center gap-3 mb-2">
-            <Utensils className="w-7 h-7 text-stone-400" />
-            <div className="flex-1">
-              <h1 className="font-serif text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
-                {today ? '오늘의 식이' : format(date, 'M월 d일') + ' 식이'}
-              </h1>
-              {phase && (
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-                  {phase.label}
-                </p>
-              )}
-            </div>
-            <button
-              onClick={() => setShowSettings((s) => !s)}
-              className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-              aria-label="설정"
-            >
-              <Settings2 className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="px-4 space-y-3">
-        {/* 설정 패널 */}
-        {showSettings && (
-          <SettingsPanel profile={profile} onSave={saveProfile} />
-        )}
-
-        {/* Phase 가이드 */}
-        {phase && (
-          <PhaseCard
-            phase={phase}
-            onStartBoosterToday={() => saveProfile({ boosterStartDate: format(new Date(), 'yyyy-MM-dd') })}
-          />
-        )}
-
-        {/* 간헐적 단식 (프리셋 + 프로그레스) */}
-        <FastingCard />
-
-        {/* 식사 로그 */}
-        <MealsCard meals={meals} onAdd={addMeal} onDelete={deleteMeal} />
-
-        {/* 핵심 지표 */}
-        <Card>
-          <div className="space-y-4">
-            <NumberWithProgress
-              icon={<Beef className="w-4 h-4 text-rose-500" />}
-              label="단백질"
-              value={log.proteinG}
-              unit="g"
-              step={10}
-              max={200}
-              percent={proteinPct}
-              hint="목표: 체중 1kg × 1.2-1.5g"
-              onChange={(v) => update({ proteinG: v })}
-            />
-            <NumberWithProgress
-              icon={<Droplets className="w-4 h-4 text-sky-500" />}
-              label="물"
-              value={log.waterMl}
-              unit="ml"
-              step={250}
-              max={4000}
-              percent={waterPct}
-              hint="목표: 2000ml+"
-              onChange={(v) => update({ waterMl: v })}
-            />
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <BedDouble className="w-4 h-4 text-indigo-500" />
-                <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
-                  수면
-                </span>
-                <span className="text-xs text-stone-400">목표 6h+ (자정-4시 포함)</span>
-              </div>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                max="14"
-                value={log.sleepHours ?? ''}
-                onChange={(e) => update({ sleepHours: e.target.value === '' ? null : parseFloat(e.target.value) })}
-                placeholder="시간"
-                className="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* 맥락 룰 */}
-        <Card>
-          <div className="mb-3">
-            <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400">
-              오늘 맥락
-            </span>
-            <p className="text-xs text-stone-400 mt-1">
-              해당하는 맥락에 따라 §5.2 룰을 적용
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <ContextChip label="🏨 호텔/B2B 미팅" active={log.hotelMeeting} onChange={(v) => update({ hotelMeeting: v })} />
-            <ContextChip label="🍷 와인 시음" active={log.wineTasting} onChange={(v) => update({ wineTasting: v })} />
-            <ContextChip label="✈️ 출장" active={log.travel} onChange={(v) => update({ travel: v })} />
-            <ContextChip label="🥢 회식" active={log.businessDinner} onChange={(v) => update({ businessDinner: v })} />
-          </div>
-        </Card>
-
-        {/* 메모 */}
-        <Card>
-          <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400 block mb-2">
-            메모
-          </span>
-          <textarea
-            value={log.notes ?? ''}
-            onChange={(e) => update({ notes: e.target.value || null })}
-            placeholder="오늘의 특이사항, 컨디션, 식사 메모…"
-            rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-          />
-        </Card>
-      </div>
-    </div>
-  )
-}
-
-type PhaseStage = {
-  key: string
-  label: string
-  hint: string
-  Icon: typeof Sparkles
-}
-
-const BOOSTER_STAGES: PhaseStage[] = [
-  { key: 'b1a', label: '장 휴식', hint: '1주 1-3일', Icon: Sprout },
-  { key: 'b1b', label: '저탄수 진입', hint: '1주 4-7일', Icon: Wheat },
-  { key: 'b2', label: '인슐린 회복', hint: '2주차', Icon: Activity },
-  { key: 'b3', label: '대사 유연', hint: '3주차', Icon: Flame },
-  { key: 'b4', label: '체지방 가속', hint: '4주차', Icon: Trophy },
-]
-
-const STATE_STAGES: PhaseStage[] = [
-  { key: 'pre', label: '시작 전', hint: '부스터 진입 전', Icon: Hourglass },
-  { key: 'm', label: '유지기', hint: '14:10 매일', Icon: Heart },
-  { key: 'lux', label: '럭셔리 분기', hint: '예외 자유', Icon: Sparkles },
-]
-
-function getCurrentPhaseKey(phase: DietPhase): string {
-  if (phase.kind === 'not_started') return 'pre'
-  if (phase.kind === 'maintenance') return 'm'
-  if (phase.kind === 'luxury_exception') return 'lux'
-  if (phase.week === 1 && phase.dayOfWeek <= 3) return 'b1a'
-  if (phase.week === 1) return 'b1b'
-  return `b${phase.week}`
-}
-
-function PhaseCard({ phase, onStartBoosterToday }: { phase: DietPhase; onStartBoosterToday: () => Promise<void> }) {
-  const currentKey = getCurrentPhaseKey(phase)
-  const current =
-    BOOSTER_STAGES.find((s) => s.key === currentKey) ??
-    STATE_STAGES.find((s) => s.key === currentKey)
-  if (!current) return null
-  const Icon = current.Icon
-
-  return (
-    <Card>
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="w-4 h-4 text-emerald-500" />
-        <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400">
-          현재 Phase
-        </span>
-      </div>
-
-      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500 text-white shadow-sm">
-        <Icon className="w-6 h-6 shrink-0" />
-        <div className="min-w-0">
-          <p className="font-serif text-lg font-bold leading-tight">{current.label}</p>
-          <p className="text-xs text-white/80 mt-0.5">{current.hint}</p>
-        </div>
-      </div>
-
-      {phase.kind === 'not_started' && (
-        <button
-          onClick={() => onStartBoosterToday()}
-          className="w-full mt-3 px-4 py-2.5 rounded-lg bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-stone-200 text-white dark:text-stone-900 text-sm font-semibold transition-colors"
-        >
-          오늘부터 부스터 시작
-        </button>
-      )}
-    </Card>
-  )
-}
-
-function FastingCard() {
-  const [active, setActive] = useState<ActiveFasting | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [, setTick] = useState(0)
-
-  const load = useCallback(async () => {
-    const res = await fetch('/api/diet/fasting')
-    const data = await res.json()
-    setActive(data.active)
-  }, [])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
-  // 활성 단식 진행률 갱신 (30초마다 re-render 트리거)
-  useEffect(() => {
-    if (!active) return
-    const id = setInterval(() => setTick((t) => t + 1), 30000)
-    return () => clearInterval(id)
-  }, [active])
-
-  const start = async (preset: FastingPreset) => {
-    setLoading(true)
     try {
-      await fetch('/api/diet/fasting', {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd')
+      const res = await fetch('/api/diet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start', preset }),
+        body: JSON.stringify({ type: 'log', date: dateStr, [doneField]: next }),
       })
-      await load()
-    } finally {
-      setLoading(false)
+      if (res.ok) {
+        const updated = await res.json()
+        setLog(updated)
+      } else {
+        // 롤백
+        setLog((prev) => prev ? { ...prev, [doneField]: current } : prev)
+      }
+    } catch (error) {
+      console.error('Failed to toggle meal:', error)
+      setLog((prev) => prev ? { ...prev, [doneField]: current } : prev)
     }
   }
 
-  const stop = async () => {
-    if (!confirm('단식 종료할까요?')) return
-    setLoading(true)
+  // 다이어트 리셋
+  const handleResetDiet = async () => {
+    const ok = window.confirm('다이어트를 리셋합니다.\n시작일·진행 주차·식단 체크 기록이 모두 삭제되고 시작 화면으로 돌아갑니다.\n계속할까요?')
+    if (!ok) return
     try {
-      await fetch('/api/diet/fasting', {
+      const res = await fetch('/api/diet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'stop' }),
+        body: JSON.stringify({ type: 'reset' }),
       })
-      await load()
-    } finally {
-      setLoading(false)
+      if (res.ok) {
+        await loadData(selectedDate)
+      }
+    } catch (error) {
+      console.error('Failed to reset diet:', error)
     }
   }
 
-  if (!active) {
+  // 다이어트 시작
+  const handleStartDiet = async () => {
+    setIsStarting(true)
+    try {
+      // 1) 4주차 + 유지기 식단 + 규칙 시드
+      await fetch('/api/diet/seed', { method: 'POST' })
+      // 2) DietConfig 생성 (시작일)
+      const res = await fetch('/api/diet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'start', startDate: startDateInput }),
+      })
+      if (res.ok) {
+        setIsStartDialogOpen(false)
+        await loadData(selectedDate)
+      }
+    } catch (error) {
+      console.error('Failed to start diet:', error)
+    } finally {
+      setIsStarting(false)
+    }
+  }
+
+  useEffect(() => {
+    loadData(selectedDate)
+  }, [selectedDate, loadData])
+
+  // 날짜 이동
+  const goToDate = (direction: 'prev' | 'next' | 'today') => {
+    if (direction === 'today') setSelectedDate(new Date())
+    else if (direction === 'prev') setSelectedDate(subDays(selectedDate, 1))
+    else setSelectedDate(addDays(selectedDate, 1))
+  }
+
+  const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+
+  // 오늘의 가이드 (시작일 기준 N주차 D일차)
+  const guideContext = config
+    ? computeWeekAndDay(new Date(config.startDate), selectedDate)
+    : null
+  const dailyGuide = guideContext
+    ? getDailyGuide(guideContext.week, guideContext.dayInWeek)
+    : null
+  const weekMeta = guideContext ? WEEK_META[Math.min(guideContext.week, 5)] : null
+
+  if (isLoading) {
     return (
-      <Card>
-        <div className="flex items-center gap-2 mb-3">
-          <Clock className="w-4 h-4 text-stone-500" />
-          <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400">
-            간헐적 단식
-          </span>
+      <div className="p-4 space-y-4 pb-24">
+        <div className="pt-2 pb-2">
+          <div className="animate-pulse bg-stone-200 dark:bg-stone-800 rounded-lg h-7 w-24 mb-1" />
+          <div className="animate-pulse bg-stone-200 dark:bg-stone-800 rounded-lg h-4 w-32" />
         </div>
-        <p className="text-sm text-stone-400 text-center mb-3 py-2">
-          시작할 단식을 선택하세요
-        </p>
-        <div className="space-y-2">
-          {FASTING_PRESETS.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => start(p.id)}
-              disabled={loading}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 hover:bg-stone-100 dark:hover:bg-stone-800 active:scale-[0.99] transition-all text-left disabled:opacity-50"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{p.label}</p>
-                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{p.sub}</p>
-              </div>
-              <div className="w-9 h-9 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-center shrink-0">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 ml-0.5" />}
-              </div>
-            </button>
-          ))}
-        </div>
-      </Card>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse bg-stone-200 dark:bg-stone-800 rounded-xl h-32" />
+        ))}
+      </div>
     )
   }
 
-  const startedAt = new Date(active.startedAt)
-  const now = new Date()
-  const elapsedMs = now.getTime() - startedAt.getTime()
-  const elapsedH = elapsedMs / 3_600_000
-  const targetMs = active.targetHours * 3_600_000
-  const pct = Math.min(100, (elapsedMs / targetMs) * 100)
-  const remainingMs = Math.max(0, targetMs - elapsedMs)
-  const isDone = elapsedH >= active.targetHours
-  const presetLabel = presetById(active.preset)?.label ?? active.preset
+  // 다이어트 시작 전 — 시작 화면
+  if (!config) {
+    return (
+      <div className="px-6 py-8 space-y-6 pb-24">
+        <div>
+          <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-200">
+            스위치온 다이어트
+          </h1>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+            신진대사 스위치를 켜는 4주 프로그램 + 유지기
+          </p>
+        </div>
 
-  const fmt = (ms: number) => {
-    const totalMin = Math.floor(ms / 60000)
-    const h = Math.floor(totalMin / 60)
-    const m = totalMin % 60
-    return `${h}시간 ${m}분`
-  }
+        <hr className="editorial-rule" />
 
-  return (
-    <Card>
-      <div className="flex items-center gap-2 mb-3">
-        <Clock className={`w-4 h-4 ${isDone ? 'text-emerald-500' : 'text-stone-500'}`} />
-        <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400 flex-1">
-          {isDone ? '단식 목표 달성' : '단식 진행 중'}
-        </span>
-        {isDone && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold tracking-wider uppercase">
-            완료
-          </span>
-        )}
-      </div>
-
-      <p className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">{presetLabel}</p>
-      <p className="text-xs text-stone-500 mt-0.5">
-        시작: {format(startedAt, 'M월 d일 HH:mm', { locale: ko })}
-      </p>
-
-      <div className="mt-3 mb-2 flex justify-between items-baseline">
-        <span className="text-base font-mono tabular-nums font-semibold text-stone-900 dark:text-stone-100">
-          {fmt(elapsedMs)}
-        </span>
-        <span className="text-xs text-stone-400 font-mono">
-          / {active.targetHours}시간 · {Math.round(pct)}%
-        </span>
-      </div>
-      <div className="h-2.5 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ease-out ${
-            isDone ? 'bg-emerald-500' : 'bg-stone-900 dark:bg-stone-100'
-          }`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <p className="text-xs text-stone-400 mt-2 text-center">
-        {isDone ? '목표 달성! 단식을 종료해주세요.' : `남은 시간 ${fmt(remainingMs)}`}
-      </p>
-
-      <button
-        onClick={stop}
-        disabled={loading}
-        className={`w-full mt-3 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 ${
-          isDone
-            ? 'border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
-            : 'border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
-        }`}
-      >
-        {loading ? '처리 중…' : isDone ? '단식 완료 기록' : '단식 종료'}
-      </button>
-    </Card>
-  )
-}
-
-function MealsCard({
-  meals,
-  onAdd,
-  onDelete,
-}: {
-  meals: MealEntry[]
-  onAdd: (meal: { time: string | null; menu: string; imagePath: string | null; notes: string | null }) => Promise<void>
-  onDelete: (id: number) => Promise<void>
-}) {
-  const [adding, setAdding] = useState(false)
-  const [time, setTime] = useState('')
-  const [menu, setMenu] = useState('')
-  const [imagePath, setImagePath] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  const reset = () => {
-    setTime('')
-    setMenu('')
-    setImagePath(null)
-    setAdding(false)
-  }
-
-  const upload = async (file: File) => {
-    setUploading(true)
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/upload', { method: 'POST', body: fd })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        alert(err.error || '업로드 실패')
-        return
-      }
-      const data = await res.json()
-      setImagePath(data.path)
-    } finally {
-      setUploading(false)
-      if (fileRef.current) fileRef.current.value = ''
-    }
-  }
-
-  const submit = async () => {
-    if (!menu.trim()) return
-    await onAdd({
-      time: time || null,
-      menu: menu.trim(),
-      imagePath,
-      notes: null,
-    })
-    reset()
-  }
-
-  return (
-    <Card>
-      <div className="flex items-center gap-2 mb-3">
-        <Utensils className="w-4 h-4 text-amber-500" />
-        <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400 flex-1">
-          오늘 먹은 것
-        </span>
-        {!adding && (
-          <button
-            onClick={() => {
-              setAdding(true)
-              setTime(format(new Date(), 'HH:mm'))
-            }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-xs font-medium"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            추가
-          </button>
-        )}
-      </div>
-
-      {meals.length === 0 && !adding && (
-        <p className="text-sm text-stone-400 text-center py-4">
-          먹은 걸 기록하면 코치가 더 정확하게 판단해요
-        </p>
-      )}
-
-      <div className="space-y-2">
-        {meals.map((m) => (
-          <div
-            key={m.id}
-            className="flex gap-3 p-3 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-900/30"
-          >
-            {m.imagePath && (
-              <Image
-                src={m.imagePath}
-                alt={m.menu}
-                width={56}
-                height={56}
-                className="w-14 h-14 rounded-lg object-cover shrink-0"
-                unoptimized
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-2">
-                {m.time && (
-                  <span className="font-mono text-xs text-stone-500 dark:text-stone-400">{m.time}</span>
-                )}
-              </div>
-              <p className="text-sm text-stone-900 dark:text-stone-100 mt-0.5 leading-snug">{m.menu}</p>
+        <Card className="border-stone-200 dark:border-stone-800">
+          <CardContent className="p-6 text-center space-y-4">
+            <div className="w-14 h-14 mx-auto rounded-full bg-orange-500/10 flex items-center justify-center">
+              <Flame className="w-7 h-7 text-orange-500" />
             </div>
-            <button
-              onClick={() => onDelete(m.id)}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 shrink-0 self-start"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
+            <div>
+              <h2 className="font-serif text-lg font-semibold">준비되셨나요?</h2>
+              <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                4주 식단 플랜이 자동으로 세팅됩니다
+              </p>
+            </div>
+            <Dialog open={isStartDialogOpen} onOpenChange={setIsStartDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="w-full h-12 text-base font-semibold">
+                  <Play className="w-4 h-4 mr-2" />
+                  다이어트 시작하기
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="font-serif text-xl">시작일 설정</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div>
+                    <label className="text-sm font-medium text-stone-600 dark:text-stone-400">
+                      다이어트 시작일
+                    </label>
+                    <Input
+                      type="date"
+                      value={startDateInput}
+                      onChange={(e) => setStartDateInput(e.target.value)}
+                      className="mt-1 h-12 text-base"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleStartDiet}
+                    disabled={isStarting}
+                    className="w-full h-12 text-base font-semibold"
+                  >
+                    {isStarting ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 식단 시드 중…</>
+                    ) : (
+                      '시작하기'
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-2 text-sm text-stone-600 dark:text-stone-400">
+          <p><span className="font-semibold text-stone-800 dark:text-stone-200">1주차</span> · 지방 연소 모드 — 단백질 쉐이크 중심</p>
+          <p><span className="font-semibold text-stone-800 dark:text-stone-200">2주차</span> · 간헐적 단식 시작 (주 1회 24시간)</p>
+          <p><span className="font-semibold text-stone-800 dark:text-stone-200">3주차</span> · 단식 강화 (주 2회 24시간)</p>
+          <p><span className="font-semibold text-stone-800 dark:text-stone-200">4주차</span> · 단식 정착 (주 3회 24시간)</p>
+          <p><span className="font-semibold text-stone-800 dark:text-stone-200">5주차+</span> · 유지기 (16:8 + 선택적 24h)</p>
+        </div>
+      </div>
+    )
+  }
+
+  const mealRows: { key: MealKey; label: string; slot: MealSlot }[] = dailyGuide
+    ? [
+        { key: 'breakfast', label: '아침', slot: dailyGuide.breakfast },
+        { key: 'lunch', label: '점심', slot: dailyGuide.lunch },
+        { key: 'snack', label: '간식', slot: dailyGuide.snack },
+        { key: 'dinner', label: '저녁', slot: dailyGuide.dinner },
+      ]
+    : []
+  const doneMap: Record<MealKey, boolean> = {
+    breakfast: log?.breakfastDone ?? false,
+    lunch: log?.lunchDone ?? false,
+    snack: log?.snackDone ?? false,
+    dinner: log?.dinnerDone ?? false,
+  }
+  const completedCount = mealRows.filter(r => doneMap[r.key]).length
+
+  return (
+    <div className="px-6 py-8 space-y-5 pb-24">
+      {/* 헤더 */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1">
+          <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-200">
+            스위치온 다이어트
+          </h1>
+          {guideContext && weekMeta && (
+            <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
+              <span className="font-semibold text-stone-700 dark:text-stone-300">
+                {weekMeta.title}
+              </span>
+              <span className="mx-1.5 text-stone-300 dark:text-stone-600">·</span>
+              <span>{weekMeta.goal}</span>
+            </p>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleResetDiet}
+          className="text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200 -mt-1 flex-shrink-0"
+        >
+          <RotateCcw className="w-3.5 h-3.5 mr-1" />
+          재설정
+        </Button>
       </div>
 
-      {adding && (
-        <div className="mt-3 p-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 space-y-2">
-          <div className="flex gap-2">
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="px-3 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-950 text-base font-mono tabular-nums w-[7.5rem] min-h-[44px] appearance-none"
-            />
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) upload(f)
-              }}
-            />
-            {imagePath ? (
-              <div className="relative">
-                <Image src={imagePath} alt="첨부" width={36} height={36} className="w-9 h-9 rounded-lg object-cover" unoptimized />
-                <button
-                  onClick={() => setImagePath(null)}
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-center"
-                >
-                  <X className="w-2.5 h-2.5" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="w-9 h-9 flex items-center justify-center rounded-lg border border-stone-200 dark:border-stone-700 text-stone-400 hover:text-stone-700"
-              >
-                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
-              </button>
-            )}
-            <input
-              value={menu}
-              onChange={(e) => setMenu(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') submit()
-              }}
-              autoFocus
-              placeholder="예: 생선구이, 채소"
-              className="flex-1 px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-950 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-            />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={reset}
-              className="px-3 py-1.5 rounded-lg text-sm text-stone-500"
-            >
-              취소
-            </button>
-            <button
-              onClick={submit}
-              disabled={!menu.trim()}
-              className="px-3 py-1.5 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium disabled:opacity-30"
-            >
-              저장
-            </button>
-          </div>
+      {/* 주차 요약 */}
+      {weekMeta && (
+        <div className="rounded-xl bg-stone-50 dark:bg-stone-900/40 border border-stone-200 dark:border-stone-800 p-4">
+          <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
+            {weekMeta.summary}
+          </p>
         </div>
       )}
-    </Card>
-  )
-}
 
-function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/50 p-4">
-      {children}
-    </div>
-  )
-}
+      <hr className="editorial-rule" />
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      onClick={() => onChange(!checked)}
-      className={`w-full mt-3 flex items-center justify-between px-3 py-2.5 rounded-lg border transition-colors ${
-        checked
-          ? 'border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
-          : 'border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-stone-600 dark:text-stone-400'
-      }`}
-    >
-      <span className="text-sm font-medium">{label}</span>
-      <span
-        className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
-          checked ? 'bg-emerald-500 text-white' : 'border-2 border-stone-300 dark:border-stone-600'
-        }`}
-      >
-        {checked ? '✓' : ''}
-      </span>
-    </button>
-  )
-}
-
-function TimeInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <div>
-      <label className="text-[11px] uppercase tracking-wider text-stone-400 block mb-1">{label}</label>
-      <input
-        type="time"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-stone-900 dark:text-stone-100 text-base font-mono tabular-nums min-h-[44px] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 appearance-none"
-      />
-    </div>
-  )
-}
-
-function NumberWithProgress({
-  icon, label, value, unit, step, max, percent, hint, onChange,
-}: {
-  icon: React.ReactNode; label: string; value: number; unit: string; step: number; max: number; percent: number; hint: string;
-  onChange: (v: number) => void
-}) {
-  return (
-    <div>
-      <div className="flex items-center gap-2 mb-2">
-        {icon}
-        <span className="text-sm font-medium text-stone-700 dark:text-stone-300">{label}</span>
-        <span className="text-xs text-stone-400">{hint}</span>
-        <span className="ml-auto text-sm font-mono text-stone-900 dark:text-stone-100">
-          {value.toLocaleString()}{unit}
-        </span>
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onChange(Math.max(0, value - step))}
-          className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 dark:border-stone-700 text-stone-500 hover:bg-stone-50 dark:hover:bg-stone-800"
-        >−</button>
-        <div className="flex-1 h-2 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
-          <div className="h-full bg-emerald-500 rounded-full transition-all duration-300" style={{ width: `${percent}%` }} />
-        </div>
-        <button
-          onClick={() => onChange(Math.min(max, value + step))}
-          className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 dark:border-stone-700 text-stone-500 hover:bg-stone-50 dark:hover:bg-stone-800"
-        >+</button>
-      </div>
-    </div>
-  )
-}
-
-function ContextChip({ label, active, onChange }: { label: string; active: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      onClick={() => onChange(!active)}
-      className={`px-3 py-2.5 rounded-lg border text-sm transition-colors ${
-        active
-          ? 'border-stone-900 dark:border-stone-100 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
-          : 'border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-stone-600 dark:text-stone-400'
-      }`}
-    >
-      {label}
-    </button>
-  )
-}
-
-function SettingsPanel({
-  profile,
-  onSave,
-}: {
-  profile: DietProfile | null
-  onSave: (patch: Partial<DietProfile>) => Promise<void>
-}) {
-  const [boosterDate, setBoosterDate] = useState(profile?.boosterStartDate?.slice(0, 10) ?? '')
-  const [luxuryS, setLuxuryS] = useState(profile?.luxuryStart?.slice(0, 10) ?? '')
-  const [luxuryE, setLuxuryE] = useState(profile?.luxuryEnd?.slice(0, 10) ?? '')
-
-  return (
-    <Card>
-      <div className="flex items-center gap-2 mb-3">
-        <Settings2 className="w-4 h-4 text-stone-500" />
-        <span className="text-xs font-semibold tracking-widest uppercase text-stone-600 dark:text-stone-400">
-          설정
-        </span>
-      </div>
-      <div className="space-y-3">
-        <div>
-          <label className="text-[11px] uppercase tracking-wider text-stone-400 block mb-1">
-            부스터 시작일 (28일 자동 진행, 비우면 유지기)
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={boosterDate}
-              onChange={(e) => setBoosterDate(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-sm"
-            />
-            <button
-              onClick={() => onSave({ boosterStartDate: boosterDate || null })}
-              className="px-4 py-2 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium"
-            >저장</button>
+      {/* 날짜 선택 */}
+      <Card className="border-stone-200 dark:border-stone-800">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="icon" onClick={() => goToDate('prev')}>
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <div className="text-center">
+              <p className="font-semibold">
+                {format(selectedDate, 'M월 d일 EEEE', { locale: ko })}
+              </p>
+              {guideContext && (
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 font-mono">
+                  {guideContext.dayInWeek}일차 · D{guideContext.totalDay}
+                  {dailyGuide && !dailyGuide.isFullFastDay && (
+                    <span className="ml-1.5 text-stone-400 dark:text-stone-500">
+                      · {completedCount}/4
+                    </span>
+                  )}
+                </p>
+              )}
+              {!isToday && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-xs text-primary p-0 h-auto mt-0.5"
+                  onClick={() => goToDate('today')}
+                >
+                  오늘로 이동
+                </Button>
+              )}
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => goToDate('next')}>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* 끼니 가이드 + 체크 */}
+      {dailyGuide && (
+        <div className="border border-stone-200 dark:border-stone-800 rounded-xl overflow-hidden">
+          {mealRows.map((row, i) => {
+            const isFasting = row.slot.type === 'fasting'
+            const isFree = row.slot.type === 'free'
+            const done = doneMap[row.key]
+            const checkable = !isFasting // 단식은 체크 안 함
+            return (
+              <button
+                key={row.key}
+                onClick={() => checkable && toggleMeal(row.key)}
+                disabled={!checkable}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${
+                  i > 0 ? 'border-t border-stone-100 dark:border-stone-800/60' : ''
+                } ${
+                  isFasting
+                    ? 'bg-amber-50/40 dark:bg-amber-950/10'
+                    : isFree
+                    ? 'bg-violet-50/40 dark:bg-violet-950/10'
+                    : done
+                    ? 'bg-emerald-50/60 dark:bg-emerald-950/20'
+                    : 'hover:bg-stone-50 dark:hover:bg-stone-900/30 active:bg-stone-100 dark:active:bg-stone-800/40'
+                } ${!checkable ? 'cursor-default' : 'cursor-pointer'}`}
+              >
+                {/* 체크박스 */}
+                {checkable ? (
+                  <div
+                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                      done
+                        ? 'bg-emerald-600 dark:bg-emerald-500 border-emerald-600 dark:border-emerald-500'
+                        : 'border-stone-300 dark:border-stone-700'
+                    }`}
+                  >
+                    {done && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                  </div>
+                ) : (
+                  <div className="w-5 h-5 flex-shrink-0" />
+                )}
+                {/* 라벨 */}
+                <span className="w-10 text-sm font-semibold text-stone-500 dark:text-stone-400 flex-shrink-0">
+                  {row.label}
+                </span>
+                {/* 메뉴 */}
+                <span
+                  className={`flex-1 text-base ${
+                    isFasting
+                      ? 'text-amber-700 dark:text-amber-400 font-semibold'
+                      : isFree
+                      ? 'text-violet-700 dark:text-violet-400 font-semibold'
+                      : done
+                      ? 'text-stone-500 dark:text-stone-500 line-through'
+                      : 'text-stone-800 dark:text-stone-200'
+                  }`}
+                >
+                  {row.slot.label}
+                  {row.slot.hint && (
+                    <span className="ml-1.5 text-xs text-stone-500 dark:text-stone-400 font-normal">
+                      ({row.slot.hint})
+                    </span>
+                  )}
+                </span>
+              </button>
+            )
+          })}
         </div>
-        <div>
-          <label className="text-[11px] uppercase tracking-wider text-stone-400 block mb-1">
-            럭셔리 분기 (트래킹 일시정지 기간)
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={luxuryS}
-              onChange={(e) => setLuxuryS(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-sm"
-            />
-            <input
-              type="date"
-              value={luxuryE}
-              onChange={(e) => setLuxuryE(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-sm"
-            />
-            <button
-              onClick={() => onSave({ luxuryStart: luxuryS || null, luxuryEnd: luxuryE || null })}
-              className="px-4 py-2 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium"
-            >저장</button>
-          </div>
-        </div>
-      </div>
-    </Card>
+      )}
+    </div>
   )
 }

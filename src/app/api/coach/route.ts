@@ -3,8 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { startOfDay, endOfDay, subDays, format } from 'date-fns'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { computePhase } from '@/lib/diet-phase'
 import { buildDietSystemPrompt, buildBusinessSystemPrompt } from '@/lib/coach-prompts'
+import { computeWeekAndDay } from '@/lib/diet-guide'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -86,12 +86,9 @@ export async function POST(request: Request) {
   let systemPrompt: string
   if (session.type === 'diet') {
     const today = new Date()
-    const profile = await prisma.dietProfile.findFirst({ orderBy: { id: 'desc' } })
-    const phase = computePhase({
-      date: today,
-      boosterStartDate: profile?.boosterStartDate ?? null,
-      luxuryStart: profile?.luxuryStart ?? null,
-      luxuryEnd: profile?.luxuryEnd ?? null,
+    const config = await prisma.dietConfig.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
     })
     const todayLog = await prisma.dietLog.findFirst({
       where: { date: { gte: startOfDay(today), lte: endOfDay(today) } },
@@ -100,56 +97,46 @@ export async function POST(request: Request) {
       where: { date: { gte: startOfDay(subDays(today, 7)), lt: startOfDay(today) } },
       orderBy: { date: 'desc' },
     })
-    const todayMeals = await prisma.mealEntry.findMany({
-      where: { date: { gte: startOfDay(today), lte: endOfDay(today) } },
-      orderBy: [{ time: 'asc' }, { createdAt: 'asc' }],
-    })
-    const activeFastingRow = await prisma.fastingSession.findFirst({
-      where: { endedAt: null },
-      orderBy: { startedAt: 'desc' },
-    })
-    const activeFasting = activeFastingRow
-      ? (() => {
-          const elapsedHours = (today.getTime() - activeFastingRow.startedAt.getTime()) / 3_600_000
-          return {
-            preset: activeFastingRow.preset,
-            targetHours: activeFastingRow.targetHours,
-            elapsedHours,
-            pct: Math.min(100, (elapsedHours / activeFastingRow.targetHours) * 100),
-          }
-        })()
+    const guide = config
+      ? computeWeekAndDay(new Date(config.startDate), today)
       : null
     systemPrompt = buildDietSystemPrompt({
-      phase,
+      config: config
+        ? {
+            startDate: format(config.startDate, 'yyyy-MM-dd'),
+            currentWeek: config.currentWeek,
+            currentPhase: config.currentPhase,
+          }
+        : null,
+      guide,
       todayLog: todayLog
         ? {
-            phase: todayLog.phase,
-            fastingStart: todayLog.fastingStart,
-            fastingEnd: todayLog.fastingEnd,
-            fasting24: todayLog.fasting24,
-            proteinG: todayLog.proteinG,
-            waterMl: todayLog.waterMl,
+            dayNumber: todayLog.dayNumber,
+            week: todayLog.week,
+            breakfastDone: todayLog.breakfastDone,
+            lunchDone: todayLog.lunchDone,
+            snackDone: todayLog.snackDone,
+            dinnerDone: todayLog.dinnerDone,
+            fastingComplete: todayLog.fastingComplete,
             sleepHours: todayLog.sleepHours,
-            hotelMeeting: todayLog.hotelMeeting,
-            wineTasting: todayLog.wineTasting,
-            travel: todayLog.travel,
-            businessDinner: todayLog.businessDinner,
-            notes: todayLog.notes,
+            waterCups: todayLog.waterCups,
+            exerciseDone: todayLog.exerciseDone,
+            noAlcohol: todayLog.noAlcohol,
+            noFlour: todayLog.noFlour,
+            noSugar: todayLog.noSugar,
+            memo: todayLog.memo,
           }
         : null,
       recentLogs: recentLogs.map((l) => ({
         date: format(l.date, 'yyyy-MM-dd'),
-        phase: l.phase,
-        proteinG: l.proteinG,
-        waterMl: l.waterMl,
-        fasting24: l.fasting24,
+        week: l.week,
+        dayNumber: l.dayNumber,
+        breakfastDone: l.breakfastDone,
+        lunchDone: l.lunchDone,
+        dinnerDone: l.dinnerDone,
+        fastingComplete: l.fastingComplete,
+        waterCups: l.waterCups,
       })),
-      todayMeals: todayMeals.map((m) => ({
-        time: m.time,
-        menu: m.menu,
-        notes: m.notes,
-      })),
-      activeFasting,
     })
   } else {
     systemPrompt = buildBusinessSystemPrompt()

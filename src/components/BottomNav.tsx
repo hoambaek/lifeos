@@ -14,7 +14,7 @@ type Tab = {
 const TABS: Tab[] = [
   { href: '/', label: '운동', Icon: Dumbbell },
   { href: '/coach', label: 'Coach', Icon: MessageCircle, center: true },
-  { href: '/diet', label: '식이', Icon: Utensils },
+  { href: '/diet', label: '식단', Icon: Utensils },
 ]
 
 export function BottomNav() {
