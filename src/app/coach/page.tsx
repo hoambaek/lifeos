@@ -270,6 +270,16 @@ export default function CoachPage() {
         <div className="flex items-center gap-2 mb-3">
           <MessageCircle className="w-5 h-5 text-stone-400" />
           <h1 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 flex-1">Coach</h1>
+          {activeId !== null && messages.length > 0 && (
+            <button
+              onClick={() => deleteSession(activeId)}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              aria-label="현재 대화 삭제"
+              title="현재 대화 삭제"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
           <button
             onClick={() => setShowHistory(true)}
             className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
@@ -517,7 +527,7 @@ function Composer({
   onFiles: (f: FileList | null) => void
 }) {
   return (
-    <div className="fixed bottom-20 inset-x-0 px-3 pb-2 pt-3 bg-background/85 backdrop-blur-md border-t border-stone-200/50 dark:border-stone-800/50">
+    <div className="fixed bottom-0 inset-x-0 z-30 px-3 pt-3 pb-[calc(4.25rem+env(safe-area-inset-bottom))] bg-background/85 backdrop-blur-md border-t border-stone-200/50 dark:border-stone-800/50">
       <div className="mx-auto max-w-2xl">
         {pendingImages.length > 0 && (
           <div className="flex gap-2 mb-2 overflow-x-auto pb-1">
@@ -590,7 +600,6 @@ function Composer({
             </button>
           </div>
         </div>
-        <p className="text-[11px] text-stone-400 text-center mt-1.5">Enter 전송 · Shift+Enter 줄바꿈</p>
       </div>
     </div>
   )
